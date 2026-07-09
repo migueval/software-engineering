@@ -1,23 +1,31 @@
 # Software Engineering
 
-## Arquitecturas
+Collection of architecture patterns, backend concepts, system design notes and real-world solutions.
 
-- Monolitos
-- Microservicios
-- Online/Offline Sync
+## Topics
 
-## Backend
+### Architecture
+- Monolithic Architecture
+- Microservices
+- Event-Driven Systems
+- Offline-First Architecture
 
+### Backend Engineering
 - NestJS
 - TypeORM
+- Authentication & Authorization
+- Queue Processing
+
+### Databases
 - PostgreSQL
+- Indexing Strategies
+- Database Migrations
 
-## Cloud
-
-- Azure
+### Cloud
+- Microsoft Azure
 - AWS
 
-## Casos de Uso
-
-- Facturación Electrónica
-- Sistemas Empresariales
+### Case Studies
+- Electronic Invoicing (SIFEN)
+- Enterprise Systems
+- Data Synchronization
