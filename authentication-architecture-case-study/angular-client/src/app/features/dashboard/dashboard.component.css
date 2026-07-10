@@ -1,0 +1,162 @@
+/* Ampliar el ancho del card para mostrar la información del JWT */
+.dashboard-card {
+  max-width: 680px !important;
+}
+
+.email-text {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Avatar Badge */
+.avatar-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--gradient-blue-green);
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+}
+
+/* Badges Row */
+.badge-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.role-badge, .backend-badge {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 20px;
+}
+
+.role-badge {
+  background: var(--blue-glow);
+  color: var(--blue-primary);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.role-badge.admin {
+  background: var(--green-glow);
+  color: var(--green-primary);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.backend-badge {
+  background: #f1f5f9;
+  color: var(--text-muted);
+  border: 1px solid #e2e8f0;
+}
+
+.divider {
+  border: 0;
+  height: 1px;
+  background: #cbd5e1;
+  margin: 30px 0;
+}
+
+/* JWT Inspector Panel */
+.jwt-inspector h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.jwt-inspector .description {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+/* Raw Token string display */
+.token-string-box {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.token-string-box label, .json-box label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+
+.token-text {
+  font-family: monospace;
+  font-size: 11px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  color: #64748b;
+  word-break: break-all;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+/* Decoded grid */
+.jwt-decoded-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+@media (max-width: 580px) {
+  .jwt-decoded-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.json-box pre {
+  background: #0f172a;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin: 0;
+  overflow-x: auto;
+  border: 1px solid #1e293b;
+  max-height: 220px;
+}
+
+.json-box code {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #38bdf8; /* Cyan color style for JSON highlights */
+}
+
+/* Logout Button */
+.btn-logout {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-logout:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}

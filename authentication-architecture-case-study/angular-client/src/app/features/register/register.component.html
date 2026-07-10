@@ -1,0 +1,91 @@
+<div class="auth-card">
+  <div class="header-section">
+    <div class="logo-badge">
+      <i>📝</i>
+    </div>
+    <h2>{{ selectedLang() === 'es' ? 'Crear Cuenta' : 'Create Account' }}</h2>
+    <p>{{ selectedLang() === 'es' ? 'Registra un nuevo usuario en la base de datos PostgreSQL' : 'Register a new user in the PostgreSQL database' }}</p>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+    <div class="form-group">
+      <label class="form-label" for="name">
+        {{ selectedLang() === 'es' ? 'Nombre Completo' : 'Full Name' }}
+      </label>
+      <input 
+        type="text" 
+        id="name" 
+        name="name"
+        class="form-input" 
+        [placeholder]="selectedLang() === 'es' ? 'Miguel Valdez' : 'John Doe'" 
+        [(ngModel)]="name" 
+        required>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">
+        {{ selectedLang() === 'es' ? 'Correo Electrónico' : 'Email Address' }}
+      </label>
+      <input 
+        type="email" 
+        id="email" 
+        name="email"
+        class="form-input" 
+        placeholder="ejemplo@correo.com" 
+        [(ngModel)]="email" 
+        required
+        email>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">
+        {{ selectedLang() === 'es' ? 'Contraseña' : 'Password' }}
+      </label>
+      <input 
+        type="password" 
+        id="password" 
+        name="password"
+        class="form-input" 
+        placeholder="••••••••" 
+        [(ngModel)]="password" 
+        required
+        minlength="6">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="role">
+        {{ selectedLang() === 'es' ? 'Rol asignado' : 'Assigned Role' }}
+      </label>
+      <select id="role" name="role" class="form-input select-input" [(ngModel)]="role" required>
+        <option value="user">{{ selectedLang() === 'es' ? 'Usuario (User)' : 'User' }}</option>
+        <option value="admin">{{ selectedLang() === 'es' ? 'Administrador (Admin)' : 'Administrator (Admin)' }}</option>
+      </select>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-box">
+      <p class="error-text">⚠️ {{ errorMessage }}</p>
+    </div>
+
+    <div *ngIf="successMessage" class="success-box">
+      <p class="success-text">✅ {{ successMessage }}</p>
+    </div>
+
+    <button type="submit" class="btn-primary" [disabled]="isLoading || !registerForm.valid">
+      <span *ngIf="!isLoading">
+        {{ selectedLang() === 'es' ? 'Registrarse' : 'Register' }}
+      </span>
+      <span *ngIf="isLoading" class="spinner">
+        {{ selectedLang() === 'es' ? 'Cargando...' : 'Loading...' }}
+      </span>
+    </button>
+  </form>
+
+  <div class="footer-links text-center mt-4">
+    <p>
+      {{ selectedLang() === 'es' ? '¿Ya tienes cuenta?' : 'Already have an account?' }}
+      <button type="button" class="btn-link" [routerLink]="['/login']">
+        {{ selectedLang() === 'es' ? 'Inicia sesión' : 'Sign in' }}
+      </button>
+    </p>
+  </div>
+</div>

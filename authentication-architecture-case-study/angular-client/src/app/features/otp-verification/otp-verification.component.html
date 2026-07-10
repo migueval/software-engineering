@@ -1,0 +1,72 @@
+<div class="auth-card">
+  <div class="header-section">
+    <div class="logo-badge warning">
+      <i>🔑</i>
+    </div>
+    <h2>{{ selectedLang() === 'es' ? 'Verificación de Seguridad' : 'Security Verification' }}</h2>
+    <p>{{ selectedLang() === 'es' ? 'Hemos enviado un código OTP de 6 dígitos a:' : 'We have sent a 6-digit OTP code to:' }}</p>
+    <strong class="email-display">{{ email }}</strong>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" #otpForm="ngForm">
+    <div class="form-group">
+      <label class="form-label text-center" for="code font-semibold">
+        {{ selectedLang() === 'es' ? 'Ingresa tu código de 6 dígitos' : 'Enter your 6-digit code' }}
+      </label>
+      <input 
+        type="text" 
+        id="code" 
+        name="code"
+        class="form-input code-input" 
+        placeholder="000000" 
+        maxlength="6"
+        pattern="\d{6}"
+        [(ngModel)]="code" 
+        required
+        autocomplete="one-time-code"
+        [disabled]="!isTimerRunning()">
+    </div>
+
+    <!-- Temporizador de cuenta atrás -->
+    <div class="timer-section text-center">
+      <p *ngIf="isTimerRunning()">
+        {{ selectedLang() === 'es' ? 'El código expira en: ' : 'Code expires in: ' }}
+        <span class="timer-clock">{{ timerString }}</span>
+      </p>
+      <p *ngIf="!isTimerRunning()" class="expired-text">
+        {{ selectedLang() === 'es' ? 'El código ha expirado.' : 'The code has expired.' }}
+      </p>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-box">
+      <p class="error-text">⚠️ {{ errorMessage }}</p>
+    </div>
+
+    <button 
+      type="submit" 
+      class="btn-primary" 
+      [disabled]="isLoading || !otpForm.valid || !isTimerRunning()">
+      <span *ngIf="!isLoading">
+        {{ selectedLang() === 'es' ? 'Verificar Código' : 'Verify Code' }}
+      </span>
+      <span *ngIf="isLoading" class="spinner">
+        {{ selectedLang() === 'es' ? 'Verificando...' : 'Verifying...' }}
+      </span>
+    </button>
+  </form>
+
+  <div class="footer-links text-center mt-4">
+    <p>{{ selectedLang() === 'es' ? '¿No recibiste el código?' : "Didn't receive the code?" }}</p>
+    <button 
+      type="button" 
+      class="btn-resend" 
+      [disabled]="isTimerRunning() || isLoading" 
+      (click)="onResendOtp()">
+      {{ selectedLang() === 'es' ? 'Reenviar Código OTP' : 'Resend OTP Code' }}
+    </button>
+    <br>
+    <button type="button" class="btn-link mt-4" [routerLink]="['/login']">
+      {{ selectedLang() === 'es' ? 'Volver al Login' : 'Back to Login' }}
+    </button>
+  </div>
+</div>

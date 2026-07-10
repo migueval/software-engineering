@@ -1,0 +1,185 @@
+<div class="login-split-container">
+  <!-- LADO IZQUIERDO: Formulario de Login (Traducido dinámicamente) -->
+  <div class="login-form-side">
+    <div class="auth-card">
+      <!-- Selector de Backend -->
+      <div class="backend-selector">
+        <button 
+          [class.active]="selectedBackend() === 'monolith'" 
+          (click)="toggleBackend('monolith')">
+          {{ selectedLang() === 'es' ? '📦 Monolito' : '📦 Monolith' }}
+        </button>
+        <button 
+          [class.active]="selectedBackend() === 'microservices'" 
+          (click)="toggleBackend('microservices')">
+          {{ selectedLang() === 'es' ? '⚙️ Microservicios' : '⚙️ Microservices' }}
+        </button>
+      </div>
+
+      <div class="header-section">
+        <div class="logo-badge" [class.micro]="selectedBackend() === 'microservices'">
+          <i *ngIf="selectedBackend() === 'monolith'">📦</i>
+          <i *ngIf="selectedBackend() === 'microservices'">⚙️</i>
+        </div>
+        <h2>{{ selectedLang() === 'es' ? 'Iniciar Sesión' : 'Sign In' }}</h2>
+        <p>
+          {{ selectedLang() === 'es' ? 'Caso de estudio: ' : 'Case study: ' }}
+          <span *ngIf="selectedBackend() === 'monolith'">
+            {{ selectedLang() === 'es' ? 'Backend NestJS Único' : 'Single NestJS Backend' }}
+          </span>
+          <span *ngIf="selectedBackend() === 'microservices'">
+            {{ selectedLang() === 'es' ? 'Gateway NestJS + RabbitMQ + Redis' : 'NestJS Gateway + RabbitMQ + Redis' }}
+          </span>
+        </p>
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+        <div class="form-group">
+          <label class="form-label" for="email">
+            {{ selectedLang() === 'es' ? 'Correo Electrónico' : 'Email Address' }}
+          </label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            class="form-input" 
+            placeholder="ejemplo@correo.com" 
+            [(ngModel)]="email" 
+            required
+            email>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">
+            {{ selectedLang() === 'es' ? 'Contraseña' : 'Password' }}
+          </label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            class="form-input" 
+            placeholder="••••••••" 
+            [(ngModel)]="password" 
+            required>
+        </div>
+
+        <div *ngIf="errorMessage" class="error-box">
+          <p class="error-text">⚠️ {{ errorMessage }}</p>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="isLoading || !loginForm.valid">
+          <span *ngIf="!isLoading">
+            {{ selectedLang() === 'es' ? 'Continuar al 2FA' : 'Continue to 2FA' }}
+          </span>
+          <span *ngIf="isLoading" class="spinner">
+            {{ selectedLang() === 'es' ? 'Cargando...' : 'Loading...' }}
+          </span>
+        </button>
+      </form>
+
+      <div class="footer-links text-center mt-4">
+        <p>
+          {{ selectedLang() === 'es' ? '¿No tienes cuenta?' : "Don't have an account?" }}
+          <button type="button" class="btn-link" [routerLink]="['/register']">
+            {{ selectedLang() === 'es' ? 'Regístrate aquí' : 'Register here' }}
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LADO DERECHO: Panel Informativo (Bilingüe ES/EN) -->
+  <div class="login-info-side">
+    <!-- Selector de Idioma -->
+    <div class="lang-switcher">
+      <button [class.active]="selectedLang() === 'es'" (click)="toggleLang('es')">ES</button>
+      <button [class.active]="selectedLang() === 'en'" (click)="toggleLang('en')">EN</button>
+    </div>
+
+    <!-- Contenido en Español -->
+    <div class="info-content" *ngIf="selectedLang() === 'es'">
+      <span class="project-tag">Caso de Estudio Técnico</span>
+      <h1>Authentication Architecture Case Study</h1>
+      <p class="info-desc">
+        Una comparación interactiva de arquitecturas de autenticación modernas. Este proyecto demuestra cómo una misma lógica de negocio se comporta operativa y estructuralmente al implementarse como un monolito tradicional o como un sistema distribuido de microservicios.
+      </p>
+
+      <div class="architecture-cards">
+        <!-- Tarjeta Monolito ES -->
+        <div class="arch-card" [class.highlighted]="selectedBackend() === 'monolith'">
+          <div class="arch-header">
+            <span class="arch-icon">📦</span>
+            <h3>Arquitectura Monolítica</h3>
+          </div>
+          <p>Implementación centralizada en una única base de código NestJS. Conexión directa a PostgreSQL mediante TypeORM. Ideal para simplicidad, transacciones atómicas rápidas y mínimo retardo de red.</p>
+          <ul class="arch-bullets">
+            <li>Base de datos relacional unificada</li>
+            <li>Llamadas síncronas en memoria</li>
+            <li>Despliegue y mantenimiento simplificado</li>
+          </ul>
+        </div>
+
+        <!-- Tarjeta Microservicios ES -->
+        <div class="arch-card" [class.highlighted]="selectedBackend() === 'microservices'">
+          <div class="arch-header">
+            <span class="arch-icon">⚙️</span>
+            <h3>Arquitectura de Microservicios</h3>
+          </div>
+          <p>Estructura modular desacoplada mediante un API Gateway. Utiliza RabbitMQ como broker de mensajería asíncrona para notificaciones y Redis para almacenamiento rápido de sesiones y OTP.</p>
+          <ul class="arch-bullets">
+            <li>Aislamiento estricto de fallos</li>
+            <li>Escalabilidad horizontal independiente</li>
+            <li>Mensajería por colas (RabbitMQ) y caché (Redis)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-footer">
+        <p>💡 Usa el selector de la izquierda para alternar la infraestructura de destino y comparar los flujos en tiempo real.</p>
+      </div>
+    </div>
+
+    <!-- Contenido en Inglés -->
+    <div class="info-content" *ngIf="selectedLang() === 'en'">
+      <span class="project-tag">Technical Case Study</span>
+      <h1>Authentication Architecture Case Study</h1>
+      <p class="info-desc">
+        An interactive comparison of modern authentication architectures. This project demonstrates how the exact same business logic behaves operationally and structurally when implemented as a traditional monolithic system or as a decoupled, distributed microservices network.
+      </p>
+
+      <div class="architecture-cards">
+        <!-- Tarjeta Monolito EN -->
+        <div class="arch-card" [class.highlighted]="selectedBackend() === 'monolith'">
+          <div class="arch-header">
+            <span class="arch-icon">📦</span>
+            <h3>Monolithic Architecture</h3>
+          </div>
+          <p>Centralized implementation in a single NestJS codebase. Direct connection to PostgreSQL database using TypeORM. Best suited for simplicity, fast atomic transactions, and minimal network latency.</p>
+          <ul class="arch-bullets">
+            <li>Unified relational database storage</li>
+            <li>In-memory synchronous calls</li>
+            <li>Simplified deployment and operations</li>
+          </ul>
+        </div>
+
+        <!-- Tarjeta Microservicios EN -->
+        <div class="arch-card" [class.highlighted]="selectedBackend() === 'microservices'">
+          <div class="arch-header">
+            <span class="arch-icon">⚙️</span>
+            <h3>Microservices Architecture</h3>
+          </div>
+          <p>Decoupled modular structure utilizing an API Gateway. Employs RabbitMQ as an asynchronous message broker for notifications and Redis for high-speed session and OTP caching.</p>
+          <ul class="arch-bullets">
+            <li>Strict fault isolation</li>
+            <li>Independent horizontal scalability</li>
+            <li>Queue-based messaging (RabbitMQ) & cache (Redis)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-footer">
+        <p>💡 Use the selector on the left to toggle the destination infrastructure and compare the authentication flows in real time.</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,56 @@
+<div class="auth-card dashboard-card">
+  <div class="header-section">
+    <div class="avatar-badge">
+      <span>{{ user?.name?.substring(0, 2)?.toUpperCase() }}</span>
+    </div>
+    <h2>{{ selectedLang() === 'es' ? '¡Bienvenido, ' : 'Welcome, ' }}{{ user?.name }}!</h2>
+    <p class="email-text">{{ user?.email }}</p>
+    
+    <div class="badge-row">
+      <span class="role-badge" [class.admin]="user?.role === 'admin'">
+        {{ selectedLang() === 'es' ? 'Rol' : 'Role' }}: {{ user?.role?.toUpperCase() }}
+      </span>
+      <span class="backend-badge">
+        🌐 
+        <span *ngIf="activeBackend.includes('3001')">
+          {{ selectedLang() === 'es' ? 'Microservicios (Puerto 3001)' : 'Microservices (Port 3001)' }}
+        </span>
+        <span *ngIf="!activeBackend.includes('3001')">
+          {{ selectedLang() === 'es' ? 'Monolito (Puerto 3000)' : 'Monolith (Port 3000)' }}
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- JWT Inspector Panel -->
+  <div class="jwt-inspector">
+    <h3>{{ selectedLang() === 'es' ? '🔍 Explorador de Tokens JWT' : '🔍 JWT Token Inspector' }}</h3>
+    <p class="description">
+      {{ selectedLang() === 'es' 
+        ? 'Este token fue emitido por el backend tras validar exitosamente el doble factor de autenticación (OTP).' 
+        : 'This token was issued by the backend after successfully verifying the two-factor authentication (OTP).' }}
+    </p>
+    
+    <div class="token-string-box">
+      <label>{{ selectedLang() === 'es' ? 'Token Crudo (Bearer JWT)' : 'Raw Token (Bearer JWT)' }}</label>
+      <div class="token-text">{{ jwtToken }}</div>
+    </div>
+
+    <div class="jwt-decoded-grid">
+      <div class="json-box">
+        <label>{{ selectedLang() === 'es' ? 'JWT Header (Cabecera)' : 'JWT Header (Header)' }}</label>
+        <pre><code>{{ jwtHeaderJson }}</code></pre>
+      </div>
+      <div class="json-box">
+        <label>{{ selectedLang() === 'es' ? 'JWT Payload (Carga Útil)' : 'JWT Payload (Payload)' }}</label>
+        <pre><code>{{ jwtPayloadJson }}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn-logout" (click)="onLogout()">
+    🚪 {{ selectedLang() === 'es' ? 'Cerrar Sesión' : 'Sign Out' }}
+  </button>
+</div>

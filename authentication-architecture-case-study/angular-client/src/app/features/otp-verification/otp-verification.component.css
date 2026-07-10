@@ -1,0 +1,122 @@
+.header-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.header-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.header-section p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.email-display {
+  display: block;
+  font-size: 15px;
+  color: var(--blue-primary);
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+/* Logo Badge Custom Warning */
+.logo-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  font-size: 24px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Code Input */
+.code-input {
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 12px;
+  padding: 10px;
+  text-indent: 12px; /* Center-aligns the letter-spaced text */
+  color: var(--text-main);
+  border: 2px solid #cbd5e1;
+}
+
+.code-input:focus {
+  border-color: var(--green-primary);
+  box-shadow: 0 0 0 4px var(--green-glow);
+}
+
+/* Timer Section */
+.timer-section {
+  margin: 20px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.timer-clock {
+  font-weight: 700;
+  color: var(--blue-primary);
+  font-size: 15px;
+}
+
+.expired-text {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Resend Button */
+.btn-resend {
+  background: none;
+  border: none;
+  color: var(--blue-primary);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+  transition: var(--transition);
+}
+
+.btn-resend:hover:not(:disabled) {
+  color: var(--green-primary);
+  text-decoration: underline;
+}
+
+.btn-resend:disabled {
+  color: var(--text-light);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* Error Box */
+.error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+}
+
+.error-text {
+  color: #b91c1c;
+  margin: 0;
+  font-size: 13px;
+}
+
+.spinner {
+  display: inline-block;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
