@@ -50,3 +50,7 @@ Each project has its own detailed setup guides.
 **Miguel Antonio Valdez Solis**  
 *Software Engineer | Full Stack Developer*  
 *Specialized in building scalable, resilient web and mobile architectures.*
+
+📫 **Contact:**
+- **Email:** miguelvaldez@idisoluciones.com
+- **Alternative Email:** migueval123solis@gmail.com
