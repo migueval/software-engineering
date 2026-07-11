@@ -16,6 +16,9 @@ While the repository documents **what was built** and **how it works**, this doc
 
 The goal is to discuss the technical trade-offs, business considerations and architectural decisions involved in building a secure authentication platform.
 
+> [!NOTE]
+> **Scope Disclaimer:** This case study is a comparison of **architectural design patterns, code organization, decoupling, and engineering trade-offs**. It is **not** a performance or load-testing benchmark. Performance analysis (like transactions-per-second or resource usage under load) is highly dependent on infrastructure tuning, network setups, and hardware limits, which are outside the scope of this structural comparison.
+
 ---
 
 # Project Vision

@@ -14,6 +14,9 @@ Comparative implementation of a secure authentication system using two different
 
 The objective of this project is to demonstrate how the same business requirements can be implemented using different architectural patterns while evaluating scalability, resiliency, maintainability, security, fault isolation and operational complexity.
 
+> [!NOTE]
+> **Scope Disclaimer:** This project is a comparative analysis of **architectural design patterns, structural complexity, and decoupling strategies**. It is **not** a performance or load-testing benchmark. Performance metrics (such as throughput, latency, or memory consumption) under load depend on infrastructure-specific configurations, tuning, and database scaling, which are outside the scope of this conceptual architecture case study.
+
 ---
 
 ## Why This Project?
