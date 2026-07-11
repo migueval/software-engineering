@@ -492,6 +492,25 @@ Authentication Continues Working
 - Angular AuthGuards
 - Endpoint Protection
 
+## Rate Limiting & Brute-Force Mitigation
+
+To prevent automated scripts and brute-force attacks, we implement rate limiting using `@nestjs/throttler`:
+
+- **Global Limit:** Maximum of 60 requests per minute by default.
+- **Login Throttling (`POST /api/auth/login`):** Throttled to 5 requests per minute.
+- **OTP Verification Throttling (`POST /api/auth/verify-otp`):** Throttled to 3 requests per 3 minutes (180 seconds).
+
+### Throttled Response (HTTP 429)
+
+If a user exceeds the request limits, the server rejects the request with a `429 Too Many Requests` status code:
+
+```json
+{
+  "statusCode": 429,
+  "message": "ThrottlerException: Too Many Requests"
+}
+```
+
 ---
 
 # Scalability Considerations
@@ -577,6 +596,25 @@ Ideal for:
 - Team autonomy
 
 No architecture is universally superior. The correct approach depends on business requirements and operational constraints.
+
+---
+
+# Testing Strategy
+
+To ensure database operations, encryption, token signing, and OTP logic behave reliably without regressions, the core authentication service is protected by automated tests.
+
+## Monolith Test Suite
+
+Unit tests are written with **Jest** and can be run locally:
+
+```bash
+npm run test
+```
+
+The test coverage covers the following behaviors in [auth.service.spec.ts](file:///c:/Users/migue/OneDrive/Documents/idisoluciones/monolitovsmicroservicio/nestjs-monolith/src/auth/auth.service.spec.ts):
+- **User Registration:** Checks that user creation, password hashing, and welcome email dispatcher work correctly.
+- **Authentication (Login):** Validates credential matching (invalid email, invalid password, correct login) and checks that numeric OTP generation and storage function correctly.
+- **OTP Verification:** Tests edge cases such as invalid stepToken lookup, expired OTP limits, incorrect OTP codes, and successful verification (which marks the OTP as used and signs the final JWT access token).
 
 ---
 

@@ -3,6 +3,7 @@ import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn, IsOptional } from 'clas
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import * as bcrypt from 'bcrypt';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
@@ -100,6 +101,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Máximo 5 intentos por minuto
   async login(@Body() loginDto: LoginDto) {
     try {
       // 1. Validar el usuario y obtener sus credenciales del microservicio User
@@ -155,6 +157,7 @@ export class AuthController {
   }
 
   @Post('verify-otp')
+  @Throttle({ default: { limit: 3, ttl: 180000 } }) // Máximo 3 intentos por cada 3 minutos (180s)
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
     try {
       return await firstValueFrom(

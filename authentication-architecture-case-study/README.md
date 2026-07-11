@@ -69,6 +69,7 @@ This project aims to answer the following questions:
 - PostgreSQL
 - Redis
 - RabbitMQ
+- Automated Testing (Unit tests with Jest)
 
 ### Security
 
@@ -78,6 +79,7 @@ This project aims to answer the following questions:
 - JWT Session Management
 - Refresh Tokens
 - Secure API Design
+- Rate Limiting & Brute-Force Throttling (@nestjs/throttler)
 
 ### Distributed Systems
 
@@ -111,6 +113,7 @@ This project aims to answer the following questions:
 - Refresh Tokens
 - Password Hashing with bcrypt
 - Two-Factor Authentication (OTP)
+- Rate Limiting & Brute-Force Throttling
 
 ### Authorization
 
@@ -127,6 +130,12 @@ This project aims to answer the following questions:
 - Docker
 - NestJS
 - Angular
+
+### Testing
+
+- Automated Unit Testing (Jest)
+- Core AuthService coverage (register, login, verifyOtp)
+- Dependency Mocking (repositories, mailers, JWT services)
 
 ---
 

@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
 import { IsEmail, IsNotEmpty, IsString, MinLength, IsIn, IsOptional } from 'class-validator';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -66,11 +67,13 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // Máximo 5 intentos por minuto
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password, loginDto.lang || 'es');
   }
 
   @Post('verify-otp')
+  @Throttle({ default: { limit: 3, ttl: 180000 } }) // Máximo 3 intentos de verificación OTP por cada 3 minutos (180s)
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
     return this.authService.verifyOtp(verifyOtpDto.code, verifyOtpDto.stepToken);
   }

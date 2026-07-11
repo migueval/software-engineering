@@ -705,6 +705,7 @@ mindmap
       OTP
       RBAC
       Refresh Tokens
+      Rate Limiting
 
     Architecture
       Monolith
@@ -732,7 +733,40 @@ mindmap
       Architecture
       Running Guide
       Design Decisions
+      Unit Testing
 ```
+
+---
+
+# Why Rate Limiting? (Brute-Force Mitigation)
+
+Authentication systems are high-value targets for attackers. Without protections, they can execute brute-force attacks on:
+1. **User Credentials:** Guessing passwords for known user emails.
+2. **2FA / OTP Verification:** Guessing the 6-digit verification code. Since the OTP is numeric and has only 6 digits, there are only 1,000,000 possibilities. An attacker sending thousands of requests per second could guess the code within minutes.
+
+## Monolithic Protection vs. Gateway Protection
+
+This project showcases two distinct architectural approaches to rate limiting:
+
+### 1. In-App Throttling (Monolith)
+In the monolithic application, rate limiting is handled internally by `@nestjs/throttler` bound as a global `APP_GUARD`.
+- **Pros:** Simple to set up, zero infrastructure overhead.
+- **Cons:** Any throttled request still hits the monolith's Node.js single-threaded event loop, consuming CPU cycles and application resources.
+
+### 2. Edge Shielding (Microservices)
+In the microservices monorepo, the rate limiter is bound at the **API Gateway** level.
+- **Pros:** Protects the inner microservices. Throttled requests are rejected at the edge (port 3001) before they can hit the internal TCP RPC network, prevent databases from querying user details, or consume resources in the `user-service` and `auth-service`.
+- **Cons:** Adds configuration responsibility to the gateway.
+
+---
+
+# Why Automated Testing? (Unit Testing)
+
+Writing automated tests is a crucial practice in backend engineering, especially for authentication logic. The `AuthService` handles registration, hashing, encryption, database transactions, caching, and notification hooks. A regression in any of these areas could lock out users or introduce critical security vulnerabilities.
+
+This project implements Jest unit tests for the core `AuthService` to prove:
+- **Isolation:** Testing the service logic independently of database states, network interfaces, or external SMTP servers by using mock implementations.
+- **Reliability:** Making sure that registration, correct login, invalid login, and OTP lifecycle verifications behave exactly as expected.
 
 ---
 
