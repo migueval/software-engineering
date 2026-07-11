@@ -414,6 +414,34 @@ Benefits:
 
 ---
 
+## Why RabbitMQ instead of Apache Kafka or Redis Pub/Sub?
+
+When choosing a messaging infrastructure for asynchronous notifications (Welcome & OTP emails), several options were evaluated:
+
+### 1. RabbitMQ vs. Apache Kafka
+
+| Feature | RabbitMQ (Smart Broker, Dumb Consumer) | Apache Kafka (Dumb Broker, Smart Consumer) |
+| :--- | :--- | :--- |
+| **Model** | Traditional Message Queueing | Append-Only Distributed Log Stream |
+| **Routing** | Complex routing (Exchanges, Bindings, Routing Keys) | Simple partition-key based routing |
+| **Lifecycle** | Messages are deleted once consumed and acknowledged. | Messages persist according to retention limits, allowing replay. |
+| **Complexity** | Lightweight, single-process, low operational cost. | Heavyweight, requires ZooKeeper/KRaft, high JVM memory. |
+| **Primary Use** | Task delegation, background jobs, transactional queues. | Real-time analytics, event streaming, log aggregation. |
+
+**Decision Justification:**
+Apache Kafka is designed for high-throughput streaming (e.g., millions of telemetry logs per second). Using it for a notification pipeline is **overkill**. 
+- Our system requires reliable transaction routing (Welcome & OTP emails) where once a message is processed, it is consumed and deleted. 
+- RabbitMQ's AMQP protocol natively handles message acknowledgements (ACKs) and DLQs (Dead Letter Queues), ensuring that if an email fails to send, the broker retains the message for retries. 
+- RabbitMQ has a negligible resource footprint, whereas Kafka requires a distributed architecture (JVM, ZooKeeper/KRaft) that would complicate local setups and Docker configurations.
+
+### 2. RabbitMQ vs. Redis Pub/Sub
+
+Redis is extremely fast and is already part of our stack. However, it was rejected for messaging:
+- **Redis Pub/Sub is fire-and-forget:** If a consumer is offline (e.g., `notification-service` goes down for updates), the message is lost forever.
+- **RabbitMQ has durable queues:** If our notification service crashes, RabbitMQ queues hold the emails safely until the service restarts, guaranteeing delivery.
+
+---
+
 # Why PostgreSQL?
 
 Authentication workflows require strong consistency.
