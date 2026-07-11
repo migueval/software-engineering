@@ -268,6 +268,27 @@ Benefits:
 
 ---
 
+# Why Token Lifecycle Management (Access vs. Refresh)?
+
+A single authentication token approach forces a bad trade-off: either the token is long-lived (convenient for users, but highly insecure if stolen), or it is short-lived (secure, but forces users to re-login every 15 minutes).
+
+To solve this, we design a dual-token lifecycle strategy:
+1. **Access Token (Short-lived - 15 minutes):** Stateless and self-contained. Used to query backend services. If an access token is intercepted, it becomes useless after a short time window.
+2. **Refresh Token (Long-lived - 7 days):** Used exclusively to request a new access token when the current one expires. It is sent and validated only via a secure, dedicated endpoint (`/auth/refresh`).
+3. **Silent Session Extension:** An Angular HTTP interceptor catches `401 Unauthorized` responses. It triggers a token refresh in the background, updating the access token and retrying the failed request transparently. The user experience remains seamless, while backend resources stay secure.
+
+---
+
+# Why Enforce a Strong Password Policy?
+
+Weak passwords are the easiest vectors for credential stuffing and brute-force guessing. Enforcing validation constraints directly at the entry-point DTOs (`RegisterDto`) ensures that weak passwords never reach our database or consume hashing workload (`bcrypt` CPU cycles).
+
+Our standard requires:
+- **Length Constraint (Min 8 characters):** Mathematically raises the complexity of offline dictionary attacks.
+- **Character Diversity (Regex Matcher):** Forces at least one uppercase letter, one lowercase letter, one numeric digit, and one special character (symbol). This expands the search space exponentially, making brute-force estimation computationally unfeasible.
+
+---
+
 # Why Implement OTP (2FA)?
 
 Passwords represent only one authentication factor.

@@ -470,15 +470,68 @@ Authentication Continues Working
 
 ## Password Protection
 
-- bcrypt hashing
-- Password validation
-- No plain-text storage
+- **Hashing:** Secure one-way hashing using `bcrypt` with 10 salt rounds.
+- **Complexity Policy (Enforced at DTO layer via regex):**
+  - Minimum **8 characters** in length.
+  - At least **one uppercase letter** (`A-Z`).
+  - At least **one lowercase letter** (`a-z`).
+  - At least **one numerical digit** (`0-9`).
+  - At least **one special character or symbol** (e.g. `@`, `$`, `!`, `%`, `*`, `?`, `&`, `_`).
+- **Zero Plaintext Leakage:** Raw passwords are encrypted immediately upon receipt and are never saved or outputted to logs.
 
 ## Authentication
 
-- JWT Access Tokens
-- Refresh Tokens
-- Session Validation
+- **JWT Access Tokens:** Short-lived tokens (valid for 15 minutes) sent in the HTTP authorization headers as a Bearer token.
+- **JWT Refresh Tokens:** Long-lived tokens (valid for 7 days) used to request new access tokens silently without prompting the user.
+- **Stateful Invalidation:** Blacklisted refresh tokens are stored in the database/Redis upon logout to prevent replay attacks.
+
+### Token Lifecycle Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Client (Browser)
+    participant API as API Gateway / Monolith
+    participant DB as PostgreSQL / Redis
+
+    Note over User, API: 1. Initial Login & OTP Phase
+    User->>API: POST /auth/login (credentials)
+    API->>DB: Check User & Generate OTP
+    DB-->>API: OTP Saved (180s TTL)
+    API-->>User: HTTP 200 { stepToken } (Requires OTP)
+    User->>API: POST /auth/verify-otp { code, stepToken }
+    API->>DB: Validate OTP code & stepToken
+    DB-->>API: Valid OTP (used = true)
+    API->>API: Sign AccessToken (15m) & RefreshToken (7d)
+    API-->>User: HTTP 200 { AccessToken, RefreshToken }
+
+    Note over User, API: 2. Normal Operations
+    User->>API: GET /auth/profile [Authorization: Bearer AccessToken]
+    API->>API: Validate AccessToken signature & expiration
+    API-->>User: HTTP 200 { profileData }
+
+    Note over User, API: 3. Token Expiration & Refresh Flow
+    Note over User: AccessToken expires (after 15 minutes)
+    User->>API: GET /auth/profile [Authorization: Bearer AccessToken]
+    API->>API: Expired AccessToken detected
+    API-->>User: HTTP 401 Unauthorized
+    
+    Note over User: Client interceptor catches 401
+    User->>API: POST /auth/refresh { RefreshToken }
+    API->>DB: Verify RefreshToken expiration/blacklist status
+    DB-->>API: RefreshToken is Valid
+    API->>API: Sign NEW AccessToken (15m)
+    API-->>User: HTTP 200 { AccessToken }
+    
+    Note over User: Client retries original request
+    User->>API: GET /auth/profile [Authorization: Bearer NEW AccessToken]
+    API-->>User: HTTP 200 { profileData }
+
+    Note over User: RefreshToken expires or is invalidated (logout)
+    User->>API: POST /auth/logout { RefreshToken }
+    API->>DB: Blacklist RefreshToken
+    API-->>User: HTTP 200 (Session Terminated)
+```
 
 ## OTP
 
