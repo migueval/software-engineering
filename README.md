@@ -257,7 +257,7 @@ Interested in:
 
 ## 📫 Contact
 
-- Email: miguelvaldez@idisoluciones.com
+- Email: migueval123solis@gmail.com
 - GitHub: https://github.com/migueval
 - LinkedIn: https://www.linkedin.com/in/miguel-valdez-5b9995156
 
