@@ -52,6 +52,45 @@ This project aims to answer the following questions:
 
 ---
 
+## 👥 Who Can Benefit From This Case Study?
+
+This case study is designed for developers at different experience levels.
+
+### 👩‍🎓 Junior Developers
+
+You will learn:
+
+- How JWT authentication works in a complete application.
+- The lifecycle of Access Tokens and Refresh Tokens.
+- How Role-Based Access Control (RBAC) protects endpoints.
+- Why OTP verification is separated from authentication.
+- How Angular AuthGuards integrate with backend authorization.
+- The role of Redis and RabbitMQ in an authentication workflow.
+
+### 👨‍💻 Mid-Level Engineers
+
+You will explore:
+
+- Monolith vs Microservices trade-offs.
+- Service boundaries.
+- API Gateway responsibilities.
+- Event-driven communication.
+- Authentication service decomposition.
+- Security architecture.
+
+### 🏗️ Senior Engineers
+
+You may be interested in:
+
+- Architectural decisions.
+- Design trade-offs.
+- Operational complexity.
+- Fault isolation strategies.
+- Infrastructure implications.
+- Possible architectural alternatives.
+
+---
+
 ## 🚀 Skills Demonstrated
 
 ### Software Architecture
