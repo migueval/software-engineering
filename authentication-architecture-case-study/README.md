@@ -54,40 +54,48 @@ This project aims to answer the following questions:
 
 ## 👥 Who Can Benefit From This Case Study?
 
-This case study is designed for developers at different experience levels.
+This case study is intended for developers at different stages of their software engineering journey.
 
 ### 👩‍🎓 Junior Developers
 
-You will learn:
+This case study can help you understand:
 
 - How JWT authentication works in a complete application.
 - The lifecycle of Access Tokens and Refresh Tokens.
-- How Role-Based Access Control (RBAC) protects endpoints.
-- Why OTP verification is separated from authentication.
+- Why Refresh Tokens are necessary.
+- The difference between authentication and authorization.
+- How Role-Based Access Control (RBAC) protects application resources.
 - How Angular AuthGuards integrate with backend authorization.
-- The role of Redis and RabbitMQ in an authentication workflow.
+- The role of Redis in OTP validation.
+- Why RabbitMQ is used for asynchronous processing.
+- How multiple services collaborate during an authentication workflow.
+
+Rather than learning isolated concepts, you'll see how they work together in a realistic authentication system.
 
 ### 👨‍💻 Mid-Level Engineers
 
-You will explore:
+This case study explores topics such as:
 
-- Monolith vs Microservices trade-offs.
-- Service boundaries.
+- Monolith vs. Microservices trade-offs.
+- Service decomposition and domain boundaries.
 - API Gateway responsibilities.
 - Event-driven communication.
-- Authentication service decomposition.
+- Authentication workflow design.
 - Security architecture.
+- Infrastructure considerations.
+- Architectural decision-making.
 
 ### 🏗️ Senior Engineers
 
-You may be interested in:
+This repository is intended to encourage technical discussion around:
 
 - Architectural decisions.
 - Design trade-offs.
 - Operational complexity.
 - Fault isolation strategies.
 - Infrastructure implications.
-- Possible architectural alternatives.
+- Security considerations.
+- Alternative architectural approaches.
 
 ---
 
