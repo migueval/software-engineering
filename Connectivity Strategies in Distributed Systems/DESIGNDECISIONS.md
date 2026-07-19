@@ -410,3 +410,204 @@ No existe una estrategia universalmente superior.
 Cada una optimiza propiedades diferentes del sistema.
 
 La decisión consiste en seleccionar la estrategia más adecuada para cada proceso del negocio y no en aplicar el mismo modelo de conectividad a todas las aplicaciones.
+# Selección del Motor de Persistencia Local
+
+Una vez definida la estrategia **Offline-First** para el Punto de Venta, surgió una nueva decisión arquitectónica.
+
+## ¿Dónde deben almacenarse las operaciones mientras el cliente permanece desconectado?
+
+La respuesta a esta pregunta determina gran parte de la confiabilidad del sistema.
+
+Si una venta no puede persistirse correctamente de forma local, tampoco podrá sincronizarse posteriormente con el servidor.
+
+Por ello, el almacenamiento local deja de ser un simple mecanismo de caché y pasa a convertirse en un componente crítico de la arquitectura.
+
+---
+
+## ¿Qué necesitaba realmente el Punto de Venta?
+
+Antes de elegir una tecnología fue necesario identificar los requisitos del dominio.
+
+El almacenamiento local debía ser capaz de:
+
+- Registrar ventas de manera confiable.
+- Mantener relaciones entre tickets, productos, impuestos y pagos.
+- Garantizar integridad incluso ante apagones o cierres inesperados.
+- Permitir consultas eficientes durante la operación diaria.
+- Integrarse de forma sencilla con Flutter Desktop.
+
+Más que un almacenamiento rápido, el Punto de Venta necesitaba un almacenamiento confiable.
+
+---
+
+## Alternativa A: Bases de datos NoSQL locales
+
+Se evaluaron motores como Isar y Hive.
+
+Estos motores ofrecen un excelente rendimiento y una integración muy sencilla con Flutter.
+
+### Ventajas
+
+- Alto rendimiento.
+- Modelo orientado a objetos.
+- Excelente integración con Flutter.
+- Baja complejidad para almacenar documentos.
+
+### Limitaciones
+
+El modelo de una venta rara vez consiste en un único documento.
+
+Una venta involucra múltiples entidades relacionadas.
+
+Por ejemplo:
+
+```text
+Venta
+
+├── Cliente
+
+├── Productos
+
+├── Impuestos
+
+├── Métodos de Pago
+
+└── Eventos de Sincronización
+```
+
+Mantener estas relaciones utilizando un modelo documental habría trasladado parte de la responsabilidad de consistencia hacia la aplicación.
+
+---
+
+## Alternativa B: SQLite
+
+SQLite representa un motor relacional ligero ampliamente utilizado en aplicaciones móviles y de escritorio.
+
+### Ventajas
+
+- Transacciones ACID.
+- Integridad referencial.
+- Consultas SQL.
+- Amplio soporte en Flutter.
+- Despliegue sin servicios adicionales.
+- Archivo único por base de datos.
+
+Estas características encajan naturalmente con el modelo relacional de un Punto de Venta.
+
+---
+
+# Decisión Adoptada
+
+Se seleccionó **SQLite** como motor de persistencia local.
+
+La decisión no respondió únicamente a su popularidad, sino a su capacidad para preservar la consistencia de las operaciones locales.
+
+La venta deja de depender del servidor, pero no puede depender de estructuras de datos inconsistentes.
+
+SQLite proporciona garantías suficientes para mantener esa consistencia incluso cuando el dispositivo pierde energía o finaliza inesperadamente la aplicación.
+
+---
+
+# ¿Por qué era importante ACID?
+
+En una arquitectura Offline-First, una venta registrada localmente representa la fuente de verdad hasta que ocurre la sincronización.
+
+Esto significa que una operación incompleta podría propagarse posteriormente al servidor.
+
+Las propiedades ACID ayudan a evitar este escenario.
+
+| Propiedad | Beneficio para el POS |
+|------------|-----------------------|
+| Atomicidad | La venta se registra completamente o no se registra. |
+| Consistencia | Se respetan las reglas de integridad del modelo. |
+| Aislamiento | Las operaciones concurrentes no interfieren entre sí. |
+| Durabilidad | Una venta confirmada permanece almacenada incluso tras un apagón. |
+
+Estas garantías reducen considerablemente el riesgo de inconsistencias durante la operación sin conexión.
+
+---
+
+# Integridad Referencial
+
+Una venta no está formada por una única fila.
+
+Existe una relación entre múltiples entidades.
+
+```text
+Venta
+
+↓
+
+Detalle de Venta
+
+↓
+
+Producto
+
+↓
+
+Método de Pago
+
+↓
+
+Impuestos
+```
+
+Mantener estas relaciones mediante claves foráneas permite que el propio motor detecte inconsistencias antes de que lleguen a formar parte de la base de datos.
+
+De esta manera, la aplicación delega parte de la validación estructural al sistema gestor de base de datos.
+
+---
+
+# Persistencia y Sincronización
+
+Otro aspecto importante consiste en que el almacenamiento local no guarda únicamente información del negocio.
+
+También registra el estado de sincronización de cada operación.
+
+Por ejemplo:
+
+```text
+Venta
+
+↓
+
+SQLite
+
+↓
+
+Event Log
+
+↓
+
+Pendiente de Sincronización
+```
+
+Esto permite que el cliente continúe operando independientemente de la disponibilidad del servidor y sincronice los eventos posteriormente.
+
+La estructura y el funcionamiento del Event Log se desarrollan con mayor detalle en el documento **SYNCHRONIZATION.md**.
+
+---
+
+# Trade-offs
+
+| Decisión | Beneficio | Costo |
+|----------|-----------|--------|
+| SQLite | Integridad, relaciones y transacciones ACID | Modelo relacional más estructurado |
+| Isar / Hive | Alto rendimiento y simplicidad | Mayor responsabilidad de consistencia en la aplicación |
+
+La arquitectura prioriza la confiabilidad de las operaciones sobre la simplicidad del modelo de almacenamiento.
+
+En este escenario, preservar correctamente una venta resulta más importante que optimizar algunos milisegundos de acceso a los datos.
+
+---
+
+# Relación con el Resto de la Arquitectura
+
+La persistencia local constituye el punto de partida de las siguientes decisiones del sistema.
+
+Una vez garantizado que las operaciones pueden almacenarse de forma segura, el siguiente desafío consiste en responder una nueva pregunta:
+
+> **¿Cómo sincronizar esa información con el servidor cuando la conectividad vuelve a estar disponible?**
+
+Esta decisión conduce al diseño del mecanismo de sincronización, el cual se desarrolla en las siguientes secciones del documento.
