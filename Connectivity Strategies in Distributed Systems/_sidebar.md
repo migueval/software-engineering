@@ -1,0 +1,11 @@
+- **Inicio**
+  - [Presentación](README.md)
+
+- **Especificaciones**
+  - [Arquitectura y Flujos](ARCHITECTURE.md)
+  - [Decisiones de Diseño](DESIGNDECISIONS.md)
+  - [Sincronización](SYNCHRONIZATION.md)
+  - [Resolución de Conflictos](CONFLICT_RESOLUTION.md)
+  - [Seguridad y Autenticación](SECURITY.md)
+  - [Estrategia de Pruebas](TEST.md)
+  - [Guía de Ejecución](RUNNING.md)
