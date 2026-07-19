@@ -164,3 +164,249 @@ Cada cliente presenta necesidades diferentes.
 En consecuencia, también requiere una estrategia de conectividad diferente.
 
 Este razonamiento constituye el punto de partida del resto de las decisiones descritas en este documento.
+# Selección de Estrategias de Conectividad
+
+Una vez identificadas las restricciones del negocio, la siguiente decisión consistió en determinar cómo deberían comunicarse las distintas aplicaciones con el servidor.
+
+La solución más sencilla habría sido utilizar una única estrategia de conectividad para toda la plataforma. Sin embargo, esta aproximación habría obligado a todos los clientes a asumir las mismas limitaciones, independientemente de sus responsabilidades.
+
+En lugar de ello, la arquitectura adopta una estrategia específica para cada aplicación.
+
+---
+
+## ¿Todas las aplicaciones necesitan comportarse igual?
+
+No.
+
+Aunque todas forman parte del mismo ecosistema, sus responsabilidades son completamente distintas.
+
+Un Punto de Venta, un panel administrativo y una aplicación logística operan bajo condiciones diferentes y responden a necesidades del negocio que no siempre coinciden.
+
+La arquitectura reconoce estas diferencias y adapta la estrategia de conectividad a cada cliente.
+
+---
+
+## Alternativa A: Online-First para toda la plataforma
+
+En este modelo, todas las operaciones dependen de una comunicación inmediata con el servidor.
+
+```text
+Cliente
+
+↓
+
+Servidor
+
+↓
+
+Respuesta
+
+↓
+
+Operación
+```
+
+### Ventajas
+
+- Información siempre actualizada.
+- Arquitectura más simple.
+- Sin mecanismos de sincronización.
+- Menor complejidad en el cliente.
+
+### Limitaciones
+
+- Una pérdida de conectividad detiene la operación.
+- La disponibilidad depende completamente de la infraestructura.
+- La latencia impacta directamente en la experiencia del usuario.
+
+Para un panel administrativo este comportamiento resulta aceptable.
+
+Para un Punto de Venta, no.
+
+---
+
+## Alternativa B: Offline-First para toda la plataforma
+
+Otra posibilidad consistía en convertir todas las aplicaciones en clientes Offline-First.
+
+```text
+Cliente
+
+↓
+
+Persistencia Local
+
+↓
+
+Cola de Eventos
+
+↓
+
+Sincronización
+
+↓
+
+Servidor
+```
+
+### Ventajas
+
+- Alta disponibilidad.
+- Autonomía frente a fallos de red.
+- Menor dependencia del servidor.
+
+### Limitaciones
+
+- Mayor complejidad de desarrollo.
+- Resolución de conflictos.
+- Persistencia local.
+- Versionado.
+- Sincronización.
+- Reconciliación.
+
+Muchas aplicaciones nunca necesitarían estas capacidades.
+
+Implementarlas supondría un coste innecesario.
+
+---
+
+# Decisión Adoptada
+
+La arquitectura adopta una estrategia híbrida.
+
+Cada cliente utiliza el modelo de conectividad que mejor responde a sus responsabilidades.
+
+| Cliente | Estrategia |
+|----------|------------|
+| Administración | Online-First Estricto |
+| Punto de Venta | Offline-First |
+| Logística | Online-First Permisivo |
+
+En lugar de buscar una única solución para todos los escenarios, la plataforma optimiza cada aplicación de manera independiente.
+
+---
+
+# ¿Por qué el Punto de Venta es Offline-First?
+
+La prioridad del Punto de Venta consiste en garantizar la continuidad de las ventas.
+
+Una interrupción de Internet no debería impedir que una sucursal continúe operando.
+
+Por este motivo, el POS registra las ventas localmente y difiere la sincronización con el servidor.
+
+```text
+Venta
+
+↓
+
+SQLite
+
+↓
+
+Event Log
+
+↓
+
+Sincronización
+
+↓
+
+Servidor
+```
+
+De esta forma, el servidor deja de formar parte del flujo crítico de atención al cliente.
+
+---
+
+# ¿Por qué la Administración es Online-First?
+
+El panel administrativo cumple una función distinta.
+
+Su responsabilidad consiste en administrar información global del sistema.
+
+Por ejemplo:
+
+- Usuarios.
+- Roles.
+- Parámetros fiscales.
+- Inventario consolidado.
+- Reportes.
+- Configuración.
+
+Trabajar con información desactualizada podría conducir a decisiones incorrectas.
+
+Por ello, la aplicación siempre consulta y modifica la información directamente sobre el servidor.
+
+La autoridad permanece centralizada.
+
+---
+
+# ¿Por qué la Aplicación de Logística utiliza un modelo híbrido?
+
+La aplicación logística representa un punto intermedio.
+
+Un repartidor puede atravesar zonas sin cobertura durante algunos minutos.
+
+Sin embargo, tampoco necesita un motor completo de sincronización como el utilizado por el Punto de Venta.
+
+La arquitectura adopta un modelo **Online-First Permisivo**.
+
+```text
+Intentar Servidor
+
+↓
+
+¿Disponible?
+
+↓
+
+Sí → Procesar
+
+↓
+
+No
+
+↓
+
+Guardar Temporalmente
+
+↓
+
+Reintentar
+```
+
+Este enfoque proporciona tolerancia frente a pérdidas temporales de conectividad sin introducir la complejidad completa de una arquitectura Offline-First.
+
+---
+
+# Comparación de Estrategias
+
+| Característica | Administración | Punto de Venta | Logística |
+|----------------|----------------|----------------|------------|
+| Estrategia | Online-First | Offline-First | Online-First Permisivo |
+| Persistencia Local | No | SQLite | Caché + Cola |
+| Escritura Offline | No | Sí | Limitada |
+| Lectura Offline | No | Sí | Parcial |
+| Sincronización | No | Completa | Parcial |
+| Resolución de Conflictos | No | Sí | Limitada |
+| Complejidad | Baja | Alta | Media |
+
+La arquitectura evita incorporar capacidades innecesarias en aplicaciones que no las requieren.
+
+Cada cliente implementa únicamente la complejidad necesaria para cumplir su responsabilidad.
+
+---
+
+# Trade-offs
+
+| Decisión | Beneficio | Costo |
+|----------|-----------|--------|
+| Online-First | Consistencia inmediata | Dependencia permanente de la red |
+| Offline-First | Máxima disponibilidad | Sincronización y resolución de conflictos |
+| Online-First Permisivo | Equilibrio entre simplicidad y disponibilidad | Persistencia temporal y reintentos |
+
+No existe una estrategia universalmente superior.
+
+Cada una optimiza propiedades diferentes del sistema.
+
+La decisión consiste en seleccionar la estrategia más adecuada para cada proceso del negocio y no en aplicar el mismo modelo de conectividad a todas las aplicaciones.
