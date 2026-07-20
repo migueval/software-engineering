@@ -611,3 +611,334 @@ Una vez garantizado que las operaciones pueden almacenarse de forma segura, el s
 > **¿Cómo sincronizar esa información con el servidor cuando la conectividad vuelve a estar disponible?**
 
 Esta decisión conduce al diseño del mecanismo de sincronización, el cual se desarrolla en las siguientes secciones del documento.
+
+# Diseño del Mecanismo de Sincronización
+
+Una vez garantizado que las operaciones podían persistirse localmente, surgió una nueva pregunta.
+
+## ¿Cuándo deben enviarse los datos al servidor?
+
+Existen varias posibilidades.
+
+La primera consiste en enviar cada operación inmediatamente después de realizarse.
+
+La segunda consiste en esperar hasta que el usuario decida sincronizar manualmente.
+
+La tercera consiste en registrar las operaciones localmente y permitir que un proceso en segundo plano las sincronice automáticamente cuando exista conectividad.
+
+Cada alternativa presenta ventajas y limitaciones.
+
+---
+
+## Alternativa A: Sincronización Inmediata
+
+En este modelo, cada operación intenta enviarse al servidor en el momento en que ocurre.
+
+```text
+Venta
+
+↓
+
+Servidor
+
+↓
+
+Respuesta
+
+↓
+
+Confirmación
+```
+
+### Ventajas
+
+- Información centralizada inmediatamente.
+- Menor cantidad de datos pendientes.
+- Flujo sencillo de implementar.
+
+### Limitaciones
+
+- Requiere conectividad permanente.
+- Una falla de red interrumpe la operación.
+- La experiencia del usuario depende de la latencia del servidor.
+
+Este enfoque contradice el objetivo principal de un sistema Offline-First.
+
+---
+
+## Alternativa B: Sincronización Manual
+
+Otra posibilidad consiste en permitir que el usuario decida cuándo enviar la información al servidor.
+
+```text
+Venta
+
+↓
+
+SQLite
+
+↓
+
+Usuario presiona "Sincronizar"
+
+↓
+
+Servidor
+```
+
+### Ventajas
+
+- Implementación sencilla.
+- El usuario controla el momento de sincronización.
+
+### Limitaciones
+
+- Depende completamente de la intervención del usuario.
+- Existe el riesgo de olvidar sincronizar.
+- Puede acumular una gran cantidad de operaciones pendientes.
+
+La confiabilidad del sistema queda condicionada al comportamiento del operador.
+
+---
+
+## Decisión Adoptada
+
+La arquitectura implementa una sincronización automática en segundo plano.
+
+Cada operación se registra localmente y un proceso independiente verifica periódicamente si existe conectividad para iniciar la sincronización.
+
+```text
+Venta
+
+↓
+
+SQLite
+
+↓
+
+Event Log
+
+↓
+
+Proceso de Sincronización
+
+↓
+
+Servidor
+```
+
+Este enfoque desacopla completamente la operación del usuario respecto al estado de la red.
+
+Mientras el cliente pueda almacenar información localmente, el negocio continúa funcionando.
+
+---
+
+# ¿Por qué utilizar un Event Log?
+
+La sincronización no trabaja directamente sobre las tablas del negocio.
+
+En su lugar, utiliza un registro independiente de eventos pendientes.
+
+Cada operación realizada por el usuario genera un evento que posteriormente será procesado por el sincronizador.
+
+Este enfoque permite:
+
+- Mantener un historial de operaciones pendientes.
+- Reintentar únicamente los eventos que fallaron.
+- Evitar recorrer continuamente todas las tablas del sistema.
+- Desacoplar la lógica de negocio del proceso de sincronización.
+
+La implementación detallada del Event Log se describe en **SYNCHRONIZATION.md**.
+
+---
+
+# ¿Por qué sincronizar en segundo plano?
+
+La sincronización puede tardar algunos segundos dependiendo del volumen de información o de la calidad de la conexión.
+
+Ejecutarla dentro del flujo principal de la aplicación afectaría directamente la experiencia del usuario.
+
+Al ejecutarse como un proceso independiente:
+
+- El usuario puede continuar trabajando.
+- Las ventas no quedan bloqueadas.
+- La interfaz permanece responsiva.
+- La sincronización puede reanudarse automáticamente tras una interrupción.
+
+La arquitectura busca que el proceso de sincronización sea prácticamente transparente para el usuario.
+
+---
+
+# ¿Qué ocurre si la sincronización falla?
+
+Una falla durante la sincronización no implica una pérdida de información.
+
+Los eventos permanecen registrados localmente hasta que el servidor confirme su procesamiento.
+
+Esto permite que el sistema vuelva a intentar la sincronización cuando las condiciones sean favorables.
+
+El mecanismo de reintentos, Backoff e Idempotencia se desarrolla en el documento **SYNCHRONIZATION.md**.
+
+---
+
+# Trade-offs
+
+| Decisión | Beneficio | Costo |
+|----------|-----------|--------|
+| Sincronización inmediata | Datos centralizados al instante | Dependencia permanente de la red |
+| Sincronización manual | Implementación sencilla | Depende del usuario |
+| Sincronización automática | Transparencia y mayor disponibilidad | Mayor complejidad en el cliente |
+
+La arquitectura prioriza la continuidad operativa sobre la simplicidad de implementación.
+
+Automatizar la sincronización reduce la intervención del usuario y disminuye la probabilidad de errores operativos.
+
+---
+
+# Relación con el Resto de la Arquitectura
+
+Sincronizar información entre múltiples clientes implica aceptar que dos dispositivos pueden modificar los mismos datos antes de comunicarse con el servidor.
+
+Esto introduce un nuevo desafío arquitectónico:
+
+> **¿Cómo resolver los conflictos que aparecen cuando varios clientes sincronizan información sobre los mismos recursos?**
+
+La siguiente sección describe las decisiones adoptadas para manejar estos escenarios y preservar la consistencia del sistema.
+# Monitoreo de Conectividad
+
+La sincronización automática permite enviar información cuando la conectividad está disponible.
+
+Sin embargo, esto plantea una nueva pregunta.
+
+## ¿Cómo sabe el sistema que un cliente continúa conectado?
+
+Una conexión establecida no garantiza que el dispositivo siga operativo.
+
+Un equipo puede apagarse, perder Internet, cerrar inesperadamente la aplicación o quedar aislado de la red sin notificar al servidor.
+
+La arquitectura necesita un mecanismo que permita detectar estos escenarios de forma automática.
+
+---
+
+## Alternativa A: Confiar en la Conexión
+
+La opción más simple consiste en asumir que un cliente permanece conectado mientras exista una conexión abierta con el servidor.
+
+### Ventajas
+
+- Implementación sencilla.
+- No requiere procesos adicionales.
+- Bajo consumo de recursos.
+
+### Limitaciones
+
+- No detecta correctamente desconexiones inesperadas.
+- Las sesiones pueden permanecer activas aunque el cliente ya no exista.
+- La información sobre clientes conectados deja de ser confiable.
+
+En sistemas distribuidos, asumir que una conexión sigue activa puede producir estados inconsistentes.
+
+---
+
+## Alternativa B: Verificación Periódica (Heartbeat)
+
+Otra alternativa consiste en que cada cliente envíe periódicamente una señal indicando que continúa operativo.
+
+```text
+Cliente
+
+↓
+
+Heartbeat
+
+↓
+
+Servidor
+
+↓
+
+Actualizar Estado
+```
+
+Mientras el servidor continúe recibiendo estos mensajes dentro del intervalo esperado, considera que el cliente permanece conectado.
+
+Si dejan de recibirse, el cliente se marca como desconectado.
+
+---
+
+# Decisión Adoptada
+
+La arquitectura implementa un mecanismo de **Heartbeats** para supervisar el estado de cada cliente.
+
+Cada aplicación envía periódicamente una señal al servidor indicando que continúa operativa.
+
+El servidor utiliza esta información para mantener un registro actualizado de los clientes activos.
+
+Esta decisión permite detectar desconexiones sin depender del cierre correcto de la aplicación.
+
+---
+
+# ¿Por qué utilizar Redis?
+
+El estado de conexión cambia constantemente.
+
+Guardar esta información en una base de datos relacional implicaría realizar escrituras continuas sobre información de naturaleza temporal.
+
+En su lugar, la arquitectura utiliza Redis para almacenar el estado de presencia de los clientes.
+
+Redis ofrece operaciones rápidas en memoria y permite trabajar de forma eficiente con información de corta duración.
+
+---
+
+# ¿Por qué utilizar TTL?
+
+Cada Heartbeat actualiza el tiempo de vida (TTL) asociado al cliente.
+
+Mientras los Heartbeats continúen llegando, el registro permanece activo.
+
+Si dejan de recibirse, Redis elimina automáticamente el estado del cliente una vez expirado el TTL.
+
+Este mecanismo evita procesos adicionales de limpieza y simplifica la detección de clientes desconectados.
+
+---
+
+# Presence Service
+
+La responsabilidad de supervisar el estado de los clientes se concentra en un servicio específico.
+
+Este servicio se encarga de:
+
+- Registrar Heartbeats.
+- Actualizar el estado de presencia.
+- Detectar clientes inactivos.
+- Informar qué dispositivos permanecen conectados.
+
+Centralizar esta responsabilidad evita duplicar lógica en otros componentes del sistema.
+
+---
+
+# Trade-offs
+
+| Decisión | Beneficio | Costo |
+|----------|-----------|--------|
+| Confiar en la conexión | Implementación simple | No detecta desconexiones inesperadas |
+| Heartbeats + Redis | Estado de presencia confiable y actualizado | Incrementa ligeramente el tráfico entre cliente y servidor |
+
+La arquitectura prioriza la confiabilidad del monitoreo frente al pequeño costo adicional generado por los Heartbeats.
+
+---
+
+# Relación con el Resto de la Arquitectura
+
+El monitoreo de conectividad complementa la estrategia Offline-First.
+
+Mientras la sincronización garantiza que las operaciones pendientes puedan enviarse al servidor cuando exista conectividad, el Presence Service permite conocer en todo momento qué clientes permanecen activos.
+
+Con estas decisiones, la arquitectura cubre tres aspectos fundamentales:
+
+- Persistencia local para mantener la operación sin conexión.
+- Sincronización automática para recuperar la consistencia cuando vuelve la red.
+- Monitoreo continuo para conocer el estado de los clientes distribuidos.
+
+La siguiente sección aborda las decisiones relacionadas con las reglas de negocio y los compromisos arquitectónicos asumidos para equilibrar disponibilidad y consistencia.
+
