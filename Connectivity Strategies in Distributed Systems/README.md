@@ -1,314 +1,315 @@
-# 🏛️ Caso de Estudio 2: Estrategias de Conectividad en Sistemas Distribuidos
+# 🏛️ Case Study 2: Connectivity Strategies in Distributed Systems
 
-### Cómo seleccionar entre Offline-First y Online-First según las reglas del negocio
-
----
-
-# Introducción
-
-Cuando se diseña un sistema distribuido, la conectividad suele asumirse como un recurso permanente.
-
-Sin embargo, muchos entornos reales no funcionan bajo esa premisa. Una conexión inestable, una red saturada o incluso una pérdida completa de comunicación forman parte del comportamiento normal del sistema.
-
-En ese contexto surge una pregunta de ingeniería que condiciona toda la arquitectura:
-
-> **¿Cómo debe comportarse una aplicación cuando la conectividad deja de estar garantizada?**
-
-Responder esta pregunta implica mucho más que decidir si una aplicación será *Offline-First* o *Online-First*. Significa comprender primero qué espera el negocio de cada cliente, cuáles son sus restricciones operativas y qué consecuencias tendría detener su funcionamiento.
-
-Este caso de estudio documenta el proceso de análisis utilizado para seleccionar distintas estrategias de conectividad dentro de una misma plataforma, demostrando que una única solución rara vez satisface las necesidades de todos los usuarios.
-
-La arquitectura presentada no parte de una tecnología específica.
-
-Parte de una pregunta de ingeniería.
+### How to Select Between Offline-First and Online-First Based on Business Rules
 
 ---
 
-# Alcance
+# Introduction
 
-Este caso de estudio no pretende demostrar que exista una estrategia universal para construir sistemas distribuidos.
+When designing a distributed system, network connectivity is often assumed to be a permanent resource.
 
-Tampoco busca implementar un framework de sincronización reutilizable o comparar tecnologías desde el punto de vista del rendimiento.
+However, many real-world environments do not operate under that premise. An unstable connection, a congested network, or even a complete loss of communication are part of normal system behavior.
 
-Su objetivo es documentar el razonamiento arquitectónico que permitió seleccionar distintas estrategias de conectividad según las restricciones del negocio, analizar las alternativas consideradas y justificar las decisiones adoptadas.
+In this context, an engineering question arises that conditions the entire architecture:
 
-Las tecnologías utilizadas representan únicamente una posible implementación de dichas decisiones.
+> **How should an application behave when connectivity is no longer guaranteed?**
 
----
+Answering this question involves much more than deciding whether an application will be *Offline-First* or *Online-First*. It means first understanding what the business expects from each client, what its operational constraints are, and what the consequences of stopping its operation would be.
 
-# Problema de Negocio
+This case study documents the analysis process used to select different connectivity strategies within the same platform, demonstrating that a single solution rarely satisfies the needs of all users.
 
-La plataforma está compuesta por tres aplicaciones que colaboran sobre el mismo ecosistema de servicios.
+The presented architecture does not start from a specific technology.
 
-Aunque todas consumen la misma infraestructura, sus responsabilidades son completamente diferentes.
-
-Diseñar una única estrategia de conectividad para todos los clientes implicaría introducir complejidad innecesaria en algunos casos o limitar capacidades críticas en otros.
-
-Comprender estas diferencias fue el punto de partida del proceso de diseño.
+It starts from an engineering question.
 
 ---
 
-## Administración
+# Scope
 
-El sistema administrativo concentra la visión global de la operación.
+This case study does not claim to demonstrate that a universal strategy exists for building distributed systems.
 
-Sus principales responsabilidades incluyen:
+Nor does it seek to implement a reusable synchronization framework or compare technologies from a performance perspective.
 
-- Administración de usuarios.
-- Gestión de permisos.
-- Monitoreo operacional.
-- Visualización de indicadores.
-- Supervisión del estado de los clientes.
-- Consulta de información consolidada.
+Its goal is to document the architectural reasoning that allowed selecting different connectivity strategies based on business constraints, analyzing the considered alternatives, and justifying the adopted decisions.
 
-La información presentada debe mantenerse actualizada para reflejar el estado real de la plataforma.
-
-Por esta razón, la disponibilidad de información en tiempo real representa una necesidad operativa.
+The technologies used represent only one possible implementation of those decisions.
 
 ---
 
-## Punto de Venta (POS)
+# Business Problem
 
-El Punto de Venta posee la restricción más importante del sistema.
+The platform consists of three applications that collaborate over the same ecosystem of services.
 
-> **El negocio no puede dejar de vender debido a una pérdida de conectividad.**
+Although all of them consume the same infrastructure, their responsibilities are completely different.
 
-Cada venta representa una operación crítica.
+Designing a single connectivity strategy for all clients would introduce unnecessary complexity in some cases or limit critical capabilities in others.
 
-La indisponibilidad temporal del servidor no debe impedir registrar nuevas transacciones.
-
-Esto implica que el cliente debe ser capaz de operar de forma autónoma durante períodos prolongados, almacenando operaciones localmente hasta recuperar la comunicación con la plataforma.
-
-La continuidad operativa tiene mayor prioridad que la sincronización inmediata.
+Understanding these differences was the starting point of the design process.
 
 ---
 
-## Aplicación de Logística
+## Administration
 
-La aplicación utilizada por el personal de logística presenta un escenario diferente.
+The administrative system concentrates the global operational view.
 
-Los usuarios necesitan:
+Its main responsibilities include:
 
-- Consultar información operativa.
-- Registrar entregas.
-- Actualizar estados.
-- Reportar movimientos.
+- User management.
+- Permission management.
+- Operational monitoring.
+- Indicator visualization.
+- Client state supervision.
+- Consolidated information queries.
 
-Aunque la pérdida temporal de conectividad puede ocurrir durante la operación diaria, detener momentáneamente estas actividades no representa el mismo impacto que detener un Punto de Venta.
+The information presented must remain updated to reflect the real state of the platform.
 
-Sin embargo, la pérdida de información sí resulta inaceptable.
-
-La estrategia de conectividad debía contemplar esta diferencia.
-
----
-
-# Restricciones del Sistema
-
-Antes de evaluar cualquier tecnología fue necesario identificar las restricciones impuestas por el negocio.
-
-Estas restricciones delimitan el conjunto de soluciones posibles y condicionan todas las decisiones posteriores.
-
-- El Punto de Venta debe continuar operando incluso sin conexión.
-- La administración necesita información prácticamente en tiempo real.
-- La aplicación logística debe tolerar interrupciones temporales sin comprometer la integridad de los datos.
-- Todos los clientes comparten el mismo backend, aunque no comparten las mismas necesidades operativas.
-- La sincronización no debe producir operaciones duplicadas.
-- El servidor debe conservar la autoridad sobre la información crítica.
-- La autenticación debe seguir siendo segura incluso cuando un cliente permanezca desconectado durante largos períodos.
-- El sistema debe detectar automáticamente clientes desconectados.
-
-Estas restricciones explican por qué una única estrategia de conectividad no resulta adecuada para toda la plataforma.
+For this reason, real-time information availability represents an operational necessity.
 
 ---
 
-# Objetivos Arquitectónicos
+## Point of Sale (POS)
 
-A partir de estas restricciones se definieron los objetivos que debía cumplir la solución.
+The Point of Sale has the most critical constraint in the system.
 
-- Garantizar la continuidad operativa.
-- Minimizar la pérdida de información.
-- Mantener la consistencia del sistema.
-- Reducir la complejidad cuando no aporta valor.
-- Adaptar la estrategia de conectividad según las necesidades de cada cliente.
-- Reutilizar la infraestructura de autenticación desarrollada en el Caso de Estudio 1.
-- Mantener una arquitectura extensible para futuros clientes.
+> **The business cannot stop selling due to a loss of connectivity.**
 
-Estos objetivos servirán posteriormente como criterio para evaluar las distintas alternativas de diseño.
+Every sale represents a critical operation.
 
----
+Temporary unavailability of the server must not prevent recording new transactions.
 
-# Preguntas que Guiaron este Caso de Estudio
+This implies that the client must be capable of operating autonomously for prolonged periods, storing operations locally until communication with the platform is recovered.
 
-Antes de escribir una sola línea de código surgieron varias preguntas de ingeniería.
-
-Responderlas permitió descartar alternativas y comprender mejor las restricciones del problema.
-
-## Conectividad
-
-- ¿Todos los clientes necesitan la misma estrategia de conectividad?
-- ¿Qué operaciones pueden detenerse cuando se pierde la conexión y cuáles deben continuar funcionando?
-- ¿Cómo cambia el comportamiento esperado del sistema después de minutos, horas o incluso días sin conectividad?
-
-## Persistencia
-
-- ¿Qué información debe considerarse fuente de verdad en el cliente?
-- ¿Qué información debe permanecer exclusivamente en el servidor?
-- ¿Cuándo una caché local resulta suficiente?
-- ¿Cuándo es necesario un motor completo de sincronización?
-
-## Sincronización
-
-- ¿Cómo garantizar que una operación sincronizada varias veces produzca un único efecto?
-- ¿Cómo reconciliar estados distintos entre cliente y servidor?
-- ¿Cómo resolver conflictos generados por múltiples clientes?
-
-## Observabilidad
-
-- ¿Cómo detectar clientes desconectados?
-- ¿Cómo conocer el estado de miles de clientes sin mantener conexiones permanentes?
-- ¿Cómo informar cambios de estado al administrador en tiempo real?
-
-## Seguridad
-
-- ¿Cómo se comporta la autenticación durante largos períodos offline?
-- ¿Qué responsabilidades deben permanecer exclusivamente del lado del servidor?
-- ¿Cómo administrar sesiones, credenciales temporales y cambios obligatorios de contraseña cuando la conectividad deja de estar garantizada?
+Operational continuity takes precedence over immediate synchronization.
 
 ---
 
-A partir de estas preguntas fue posible comenzar a evaluar distintas alternativas arquitectónicas.
-# Alternativas Evaluadas
+## Logistics Application
 
-Antes de definir la arquitectura final se analizaron distintas estrategias de conectividad.
+The application used by logistics personnel presents a different scenario.
 
-El objetivo no consistía en identificar cuál era técnicamente superior, sino cuál respondía mejor a las restricciones del negocio.
+Users need to:
 
-Cada alternativa resolvía correctamente algunos escenarios, pero también introducía limitaciones importantes en otros.
+- Query operational information.
+- Register deliveries.
+- Update statuses.
+- Report movements.
+
+Although temporary loss of connectivity can occur during daily operations, momentarily stopping these activities does not have the same impact as stopping a Point of Sale.
+
+However, loss of information is unacceptable.
+
+The connectivity strategy had to account for this difference.
 
 ---
 
-## Alternativa 1 — Todo Online-First
+# System Constraints
 
-La primera posibilidad consistía en mantener todos los clientes conectados permanentemente al servidor.
+Before evaluating any technology, it was necessary to identify the constraints imposed by the business.
 
-Cada operación dependería de la disponibilidad de la infraestructura central.
+These constraints delimit the set of possible solutions and condition all subsequent decisions.
+
+- The Point of Sale must continue operating even without a connection.
+- Administration requires near-real-time information.
+- The logistics application must tolerate temporary disruptions without compromising data integrity.
+- All clients share the same backend, even though they do not share the same operational needs.
+- Synchronization must not produce duplicate operations.
+- The server must retain authority over critical information.
+- Authentication must remain secure even when a client remains offline for extended periods.
+- The system must automatically detect disconnected clients.
+
+These constraints explain why a single connectivity strategy is not suitable for the entire platform.
+
+---
+
+# Architectural Objectives
+
+Based on these constraints, the objectives that the solution had to meet were defined.
+
+- Guarantee operational continuity.
+- Minimize data loss.
+- Maintain system consistency.
+- Reduce complexity where it adds no value.
+- Adapt the connectivity strategy according to the needs of each client.
+- Reuse the authentication infrastructure developed in Case Study 1.
+- Maintain an extensible architecture for future clients.
+
+These objectives later served as criteria to evaluate design alternatives.
+
+---
+
+# Questions That Guided This Case Study
+
+Before writing a single line of code, several engineering questions arose.
+
+Answering them allowed discarding alternatives and better understanding the problem constraints.
+
+## Connectivity
+
+- Do all clients need the same connectivity strategy?
+- Which operations can stop when connection is lost, and which must continue functioning?
+- How does expected system behavior change after minutes, hours, or even days without connectivity?
+
+## Persistence
+
+- What information should be considered the source of truth in the client?
+- What information should reside exclusively on the server?
+- When is a local cache sufficient?
+- When is a full synchronization engine necessary?
+
+## Synchronization
+
+- How can we guarantee that an operation synchronized multiple times produces a single effect?
+- How can we reconcile differing states between client and server?
+- How can we resolve conflicts generated by multiple clients?
+
+## Observability
+
+- How can we detect disconnected clients?
+- How can we monitor the state of thousands of clients without maintaining permanent connections?
+- How can we inform the administrator of state changes in real time?
+
+## Security
+
+- How does authentication behave during extended offline periods?
+- Which responsibilities must remain exclusively server-side?
+- How can sessions, temporary credentials, and mandatory password changes be managed when connectivity is no longer guaranteed?
+
+---
+
+Starting from these questions, it was possible to begin evaluating different architectural alternatives.
+
+# Evaluated Alternatives
+
+Before defining the final architecture, different connectivity strategies were analyzed.
+
+The goal was not to identify which was technically superior, but which better answered business constraints.
+
+Each alternative correctly resolved some scenarios, but also introduced significant limitations in others.
+
+---
+
+## Alternative 1 — All Online-First
+
+The first possibility was to keep all clients permanently connected to the server.
+
+Every operation would depend on central infrastructure availability.
 
 ```text
-Cliente
-    │
-    ▼
-Servidor
-    │
-Respuesta
+Client
+  │
+  ▼
+Server
+  │
+Response
 ```
 
-### Ventajas
+### Advantages
 
-- Arquitectura relativamente sencilla.
-- Fuente única de verdad.
-- Sin mecanismos complejos de sincronización.
-- Menor mantenimiento del cliente.
+- Relatively simple architecture.
+- Single source of truth.
+- No complex synchronization mechanisms.
+- Lower client maintenance.
 
-### Desventajas
+### Disadvantages
 
-- El Punto de Venta deja de operar cuando pierde conectividad.
-- Mayor dependencia de la infraestructura.
-- Mala experiencia de usuario en redes inestables.
-- El negocio queda condicionado por la disponibilidad del servidor.
+- The Point of Sale stops operating when connectivity is lost.
+- Higher dependency on infrastructure.
+- Poor user experience on unstable networks.
+- Business operations are constrained by server availability.
 
-Esta alternativa resultó adecuada para algunos clientes, pero incompatible con las necesidades operativas del POS.
+This alternative proved suitable for some clients, but incompatible with POS operational needs.
 
 ---
 
-## Alternativa 2 — Todo Offline-First
+## Alternative 2 — All Offline-First
 
-La segunda alternativa consistía en permitir que todos los clientes funcionaran completamente desconectados.
+The second alternative was to allow all clients to function completely disconnected.
 
-Cada aplicación mantendría almacenamiento local y sincronizaría posteriormente con el servidor.
+Each application would maintain local storage and synchronize later with the server.
 
 ```text
-Cliente
+Client
 
 SQLite / Isar
 
 ↓
 
-Motor de Sincronización
+Sync Engine
 
 ↓
 
-Servidor
+Server
 ```
 
-### Ventajas
+### Advantages
 
-- Máxima disponibilidad.
-- Independencia de la conectividad.
-- Excelente experiencia de usuario.
-- Continuidad operativa.
+- Maximum availability.
+- Connectivity independence.
+- Excellent user experience.
+- Operational continuity.
 
-### Desventajas
+### Disadvantages
 
-- Mayor complejidad de implementación.
-- Sincronización de estados.
-- Resolución de conflictos.
-- Gestión de consistencia eventual.
-- Mayor coste de mantenimiento.
+- Higher implementation complexity.
+- State synchronization.
+- Conflict resolution.
+- Eventual consistency management.
+- Higher maintenance cost.
 
-Aunque esta alternativa resolvía completamente el problema del POS, incorporaba una complejidad innecesaria para clientes que nunca necesitaban operar desconectados.
+Although this alternative completely solved the POS problem, it introduced unnecessary complexity for clients that never needed offline operations.
 
 ---
 
-## Alternativa 3 — Estrategia Específica por Cliente
+## Alternative 3 — Client-Specific Strategy
 
-La tercera alternativa consistía en abandonar la idea de utilizar una única estrategia para toda la plataforma.
+The third alternative was to abandon the idea of using a single strategy across the platform.
 
-En su lugar, cada cliente adoptaría el modelo de conectividad más adecuado según sus restricciones operativas.
+Instead, each client would adopt the connectivity model best suited to its operational constraints.
 
-| Cliente | Estrategia |
+| Client | Strategy |
 |----------|------------|
-| Administración | Online-First |
-| Punto de Venta | Offline-First |
-| Logística | Online-First Permisivo |
+| Administration | Online-First |
+| Point of Sale | Offline-First |
+| Logistics | Permissive Online-First |
 
-Esta alternativa permitió introducir complejidad únicamente donde generaba valor.
-
----
-
-# Decisión Arquitectónica
-
-Tras evaluar las alternativas se adoptó una arquitectura híbrida.
-
-La decisión no surgió de una preferencia tecnológica, sino del análisis de las reglas del negocio.
-
-En lugar de preguntarse:
-
-> ¿Qué tecnología utilizaremos?
-
-La arquitectura respondió primero una pregunta diferente:
-
-> **¿Qué necesita cada cliente para cumplir correctamente su función?**
+This alternative allowed introducing complexity only where it generated value.
 
 ---
 
-## Árbol de Decisión
+# Architectural Decision
 
-La estrategia de conectividad se seleccionó siguiendo una secuencia de preguntas.
+After evaluating alternatives, a hybrid architecture was adopted.
+
+The decision did not stem from technological preference, but from analyzing business rules.
+
+Instead of asking:
+
+> Which technology will we use?
+
+The architecture answered a different question first:
+
+> **What does each client need to properly perform its function?**
+
+---
+
+## Decision Tree
+
+The connectivity strategy was selected following a sequence of questions.
 
 ```mermaid
 flowchart TD
 
-    A[Cliente]
+    A[Client]
 
-    A --> B{"¿El negocio puede detenerse?"}
+    A --> B{"Can the business stop?"}
 
     B -->|No| C[Offline-First]
 
-    B -->|Sí| D{"¿Necesita información en tiempo real?"}
+    B -->|Yes| D{"Does it need real-time data?"}
 
-    D -->|Sí| E[Online-First]
+    D -->|Yes| E[Online-First]
 
-    D -->|No| F[Online-First Permisivo]
+    D -->|No| F[Permissive Online-First]
 
     classDef decision fill:#FFF3CD,stroke:#F0AD4E,color:#000,stroke-width:2px;
     classDef offline fill:#D4EDDA,stroke:#28A745,color:#000,stroke-width:2px;
@@ -321,24 +322,24 @@ flowchart TD
     class F permissive;
 ```
 
-Este diagrama resume la lógica utilizada para seleccionar la estrategia de conectividad de cada aplicación.
+This diagram summarizes the logic used to select each application's connectivity strategy.
 
-La tecnología utilizada posteriormente es únicamente una consecuencia de esta decisión.
+The technology used subsequently is merely a consequence of this decision.
 
 ---
 
-## Arquitectura Resultante
+## Resulting Architecture
 
 ```mermaid
 flowchart LR
 
-subgraph CLIENTES
+subgraph CLIENTS
 
-ADMIN[Administración]
+ADMIN[Administration]
 
 POS[POS]
 
-LOG[Logística]
+LOG[Logistics]
 
 end
 
@@ -367,131 +368,134 @@ API --> SYNC
 API --> MONITOR
 ```
 
-Aunque todos los clientes utilizan el mismo backend, cada uno mantiene una estrategia de comunicación distinta.
+Although all clients use the same backend, each maintains a distinct communication strategy.
 
-La arquitectura deja de estar definida por la infraestructura y comienza a estar definida por las necesidades del negocio.
-
----
-
-# Tecnologías Utilizadas
-
-Una vez definida la arquitectura fue posible seleccionar las tecnologías que implementaban cada responsabilidad.
-
-Estas herramientas representan una implementación posible de la solución descrita en este caso de estudio.
-
-No constituyen la única combinación válida.
+Architecture ceases to be defined by infrastructure and begins to be defined by business needs.
 
 ---
 
-## Clientes
+# Technologies Used
 
-| Cliente | Tecnología | Estrategia |
+Once the architecture was defined, it was possible to select technologies that implemented each responsibility.
+
+These tools represent one possible implementation of the solution described in this case study.
+
+They do not constitute the only valid combination.
+
+---
+
+## Clients
+
+| Client | Technology | Strategy |
 |----------|------------|------------|
-| Administración | Angular | Online-First |
-| Punto de Venta | Flutter Desktop | Offline-First |
-| Logística | Flutter Android | Online-First Permisivo |
+| Administration | Angular | Online-First |
+| Point of Sale | Flutter Desktop | Offline-First |
+| Logistics | Flutter Android | Permissive Online-First |
 
 ---
 
 ## Backend
 
-| Tecnología | Responsabilidad |
+| Technology | Responsibility |
 |------------|-----------------|
-| NestJS | API Gateway y servicios principales |
-| REST | Comunicación síncrona |
-| WebSockets | Actualizaciones en tiempo real |
-| RabbitMQ | Procesamiento asíncrono |
+| NestJS | API Gateway and core services |
+| REST | Synchronous communication |
+| WebSockets | Real-time updates |
+| RabbitMQ | Asynchronous processing |
 
 ---
 
-## Persistencia
+## Persistence
 
-| Tecnología | Responsabilidad |
+| Technology | Responsibility |
 |------------|-----------------|
-| PostgreSQL | Persistencia central |
-| SQLite / Isar | Persistencia local del POS |
-| Redis | Estados temporales, sesiones y Heartbeats |
+| PostgreSQL | Central persistence |
+| SQLite / Isar | Local POS persistence |
+| Redis | Temporary states, sessions, and Heartbeats |
 
 ---
 
-## Seguridad
+## Security
 
 - JWT
 - Refresh Tokens
 - RBAC
-- Credenciales Temporales
-- Cambio Obligatorio de Contraseña
+- Temporary Credentials
+- Mandatory Password Change
 - Step Token
 
 ---
 
-## Sincronización
+## Synchronization
 
-- Cola local
-- UUID por operación
-- Idempotencia
-- Reintentos automáticos
-- Consistencia Eventual
+- Local queue
+- UUID per operation
+- Idempotency
+- Automatic retries
+- Eventual Consistency
 - Heartbeats
-- TTL en Redis
+- Redis TTL
 
 ---
 
-## Relación entre Arquitectura y Tecnología
+## Relationship Between Architecture and Technology
 
-Las tecnologías utilizadas no determinaron la arquitectura.
+The technologies used did not dictate the architecture.
 
-Ocurrió exactamente lo contrario.
+The exact opposite occurred.
 
-Primero se identificaron las restricciones del sistema.
+First, system constraints were identified.
 
-Posteriormente se diseñó la estrategia de conectividad.
+Next, the connectivity strategy was designed.
 
-Finalmente se seleccionaron las herramientas capaces de implementar dichas decisiones.
+Finally, tools capable of implementing those decisions were selected.
 
-> **Las decisiones arquitectónicas definen las responsabilidades. Las tecnologías proporcionan los mecanismos para implementarlas.**
-
----
-
-# Trade-offs de la Solución
-
-Elegir una estrategia distinta para cada cliente también implica aceptar ciertos compromisos.
-
-## Beneficios
-
-- Continuidad operativa.
-- Mejor experiencia de usuario.
-- Complejidad localizada.
-- Arquitectura adaptable.
-- Mejor aprovechamiento de cada tecnología.
-
-## Costes
-
-- Mayor complejidad de sincronización.
-- Gestión de estados distribuidos.
-- Resolución de conflictos.
-- Mayor esfuerzo de observabilidad.
-- Mayor complejidad operacional.
-
-Toda decisión arquitectónica implica aceptar beneficios y costes.
-
-Comprender esos compromisos resulta más importante que conocer las tecnologías utilizadas.
-# Comportamiento Operacional
-
-Una vez definida la arquitectura y la estrategia de conectividad de cada cliente, resulta necesario comprender cómo se comporta el sistema durante la operación diaria.
-
-Cada aplicación sigue un flujo diferente porque responde a necesidades distintas del negocio.
+> **Architectural decisions define responsibilities. Technologies provide mechanisms to implement them.**
 
 ---
 
-# Administración — Online-First
+# Solution Trade-offs
 
-El cliente administrativo trabaja siempre sobre información actualizada.
+Choosing a different strategy for each client also implies accepting certain trade-offs.
 
-Cada operación consulta directamente los servicios de la plataforma y refleja inmediatamente los cambios producidos por otros clientes.
+## Benefits
+
+- Operational continuity.
+- Better user experience.
+- Localized complexity.
+- Adaptable architecture.
+- Better leverage of each technology.
+
+## Costs
+
+- Higher synchronization complexity.
+- Distributed state management.
+- Conflict resolution.
+- Greater observability effort.
+- Higher operational complexity.
+
+Every architectural decision implies accepting benefits and costs.
+
+Understanding those trade-offs is far more important than knowing the technologies used.
+
+---
+
+# Operational Behavior
+
+Once architecture and each client's connectivity strategy are defined, it is necessary to understand how the system behaves during daily operations.
+
+Each application follows a different flow because it responds to distinct business needs.
+
+---
+
+# Administration — Online-First
+
+The administrative client always works with up-to-date information.
+
+Every operation directly queries platform services and immediately reflects changes produced by other clients.
 
 ```text
-Usuario
+User
 
 ↓
 
@@ -510,27 +514,27 @@ NestJS
 PostgreSQL
 ```
 
-## Características
+## Characteristics
 
-- Información en tiempo real.
-- Fuente única de verdad.
-- Sin almacenamiento persistente local.
-- Baja complejidad de sincronización.
+- Real-time information.
+- Single source of truth.
+- No local persistent storage.
+- Low synchronization complexity.
 
 ---
 
-# Punto de Venta — Offline-First
+# Point of Sale — Offline-First
 
-El Punto de Venta prioriza la continuidad operativa.
+The Point of Sale prioritizes operational continuity.
 
-Las operaciones nunca dependen directamente de la disponibilidad del servidor.
+Operations never directly depend on server availability.
 
-Cuando existe conectividad, las operaciones se sincronizan automáticamente.
+When connectivity exists, operations synchronize automatically.
 
-Cuando la conectividad desaparece, la aplicación continúa funcionando utilizando almacenamiento local.
+When connectivity vanishes, the application continues functioning using local storage.
 
 ```text
-Venta
+Sale
 
 ↓
 
@@ -538,11 +542,11 @@ SQLite
 
 ↓
 
-Cola Local
+Local Queue
 
 ↓
 
-Motor de Sincronización
+Sync Engine
 
 ↓
 
@@ -553,228 +557,228 @@ API Gateway
 PostgreSQL
 ```
 
-## Características
+## Characteristics
 
-- Continuidad operativa.
-- Persistencia local.
-- Sincronización automática.
-- Idempotencia.
-- Consistencia eventual.
+- Operational continuity.
+- Local persistence.
+- Automatic synchronization.
+- Idempotency.
+- Eventual consistency.
 
 ---
 
-# Logística — Online-First Permisivo
+# Logistics — Permissive Online-First
 
-La aplicación logística mantiene una estrategia intermedia.
+The logistics application maintains an intermediate strategy.
 
-Normalmente trabaja conectada al servidor.
+Normally, it works connected to the server.
 
-Cuando la comunicación falla, conserva temporalmente las operaciones pendientes hasta recuperar la conectividad.
+When communication fails, it temporarily retains pending operations until connectivity is recovered.
 
 ```text
-Operación
+Operation
 
 ↓
 
-Caché Local
+Local Cache
 
 ↓
 
-Reintentos
+Retries
 
 ↓
 
-Servidor
+Server
 ```
 
-## Características
+## Characteristics
 
-- Prioriza información actualizada.
-- Tolera interrupciones temporales.
-- Reintentos automáticos.
-- Baja complejidad respecto al POS.
+- Prioritizes updated information.
+- Tolerates temporary disruptions.
+- Automatic retries.
+- Lower complexity relative to POS.
 
 ---
 
-# Estrategia de Autenticación
+# Authentication Strategy
 
-Este caso de estudio reutiliza la arquitectura de autenticación desarrollada en el Caso de Estudio 1.
+This case study reuses the authentication architecture developed in Case Study 1.
 
-No se pretende volver a explicar JWT, RBAC o Refresh Tokens.
+It does not intend to re-explain JWT, RBAC, or Refresh Tokens.
 
-El objetivo consiste en analizar cómo estos mecanismos se comportan cuando la conectividad deja de estar garantizada.
+The objective is to analyze how these mechanisms behave when connectivity is no longer guaranteed.
 
-Las capacidades reutilizadas incluyen:
+Reused capabilities include:
 
 - JWT Authentication
 - Refresh Tokens
 - RBAC
-- Credenciales Temporales
-- Cambio Obligatorio de Contraseña
+- Temporary Credentials
+- Mandatory Password Change
 - Step Token
-- Gestión de Sesiones
+- Session Management
 
-La principal diferencia consiste en evaluar cómo mantener una experiencia segura cuando algunos clientes pueden permanecer desconectados durante largos períodos.
+The main difference is evaluating how to maintain a secure experience when some clients remain offline for extended periods.
 
 ---
 
-# Conceptos de Ingeniería Explorados
+# Engineering Concepts Explored
 
-Este caso de estudio explora conceptos habituales en el diseño de sistemas distribuidos.
+This case study explores common concepts in distributed systems design.
 
-## Arquitectura
+## Architecture
 
 - Offline-First
 - Online-First
-- Arquitecturas Híbridas
-- Diseño Basado en Restricciones
-- Arquitectura Guiada por Reglas de Negocio
+- Hybrid Architectures
+- Constraint-Based Design
+- Business-Rule-Driven Architecture
 
 ---
 
-## Sistemas Distribuidos
+## Distributed Systems
 
-- Consistencia Eventual
-- Idempotencia
-- Reconciliación de Estados
-- Sincronización Distribuida
-
----
-
-## Disponibilidad
-
-- Continuidad Operativa
-- Recuperación ante Fallos
-- Tolerancia a Particiones
-- Degradación Controlada
+- Eventual Consistency
+- Idempotency
+- State Reconciliation
+- Distributed Synchronization
 
 ---
 
-## Observabilidad
+## Availability
+
+- Operational Continuity
+- Failure Recovery
+- Partition Tolerance
+- Graceful Degradation
+
+---
+
+## Observability
 
 - Heartbeats
-- Estado de Conectividad
-- Detección Automática de Clientes Offline
-- Monitoreo Operacional
+- Connectivity State
+- Automatic Offline Client Detection
+- Operational Monitoring
 
 ---
 
-## Seguridad
+## Security
 
-- Gestión de Sesiones
-- Tokens Distribuidos
-- Control de Acceso
-- Credenciales Temporales
-
----
-
-# Lo que Demuestra este Caso de Estudio
-
-Este proyecto no intenta demostrar que Offline-First sea superior a Online-First.
-
-Tampoco intenta demostrar lo contrario.
-
-Su propósito consiste en mostrar que la arquitectura de conectividad debe responder a las necesidades del negocio y no a preferencias tecnológicas.
-
-Comprender cuándo utilizar cada estrategia resulta mucho más importante que conocer una tecnología específica.
-
-En otras palabras,
-
-> **La mejor estrategia de conectividad depende completamente de las restricciones que el negocio impone al sistema.**
+- Session Management
+- Distributed Tokens
+- Access Control
+- Temporary Credentials
 
 ---
 
-# ¿Quién Puede Beneficiarse de este Caso de Estudio?
+# What This Case Study Demonstrates
+
+This project does not try to prove that Offline-First is superior to Online-First.
+
+Nor does it try to prove the opposite.
+
+Its purpose is to show that connectivity architecture must respond to business needs, not technological preferences.
+
+Understanding when to use each strategy is far more important than knowing a specific technology.
+
+In other words,
+
+> **The best connectivity strategy depends entirely on the constraints that the business imposes on the system.**
+
+---
+
+# Who Can Benefit from This Case Study?
 
 ## Junior Developers
 
-- Comprender cuándo utilizar Offline-First.
-- Diferenciar Online-First de Online-First Permisivo.
-- Introducirse en conceptos de sincronización.
-- Relacionar tecnologías con responsabilidades arquitectónicas.
+- Understand when to use Offline-First.
+- Differentiate Online-First from Permissive Online-First.
+- Get introduced to synchronization concepts.
+- Relate technologies to architectural responsibilities.
 
 ---
 
 ## Mid-Level Developers
 
-- Analizar trade-offs.
-- Diseñar clientes con distintas estrategias de conectividad.
-- Comprender consistencia eventual.
-- Evaluar mecanismos de sincronización.
+- Analyze trade-offs.
+- Design clients with different connectivity strategies.
+- Understand eventual consistency.
+- Evaluate synchronization mechanisms.
 
 ---
 
 ## Senior Developers
 
-- Analizar decisiones arquitectónicas.
-- Evaluar restricciones del negocio.
-- Comparar alternativas.
-- Adaptar estrategias de conectividad según distintos escenarios.
-- Identificar responsabilidades entre clientes, infraestructura y backend.
+- Analyze architectural decisions.
+- Evaluate business constraints.
+- Compare alternatives.
+- Adapt connectivity strategies to different scenarios.
+- Identify responsibilities between clients, infrastructure, and backend.
 
 ---
 
-# Documentación
+# Documentation
 
-Este caso de estudio se complementa con documentación adicional que profundiza en distintos aspectos de la arquitectura y del proceso de diseño.
+This case study is complemented by additional documentation that delves deeper into different aspects of architecture and design process.
 
-| Documento | Descripción |
+| Document | Description |
 |------------|-------------|
-| **ARCHITECTURE.md** | Arquitectura general, componentes, diagramas y relaciones entre los servicios. |
-| **DESIGNDECISIONS.md** | Decisiones arquitectónicas, alternativas evaluadas y análisis de trade-offs. |
-| **SYNCHRONIZATION.md** | Estrategias de sincronización, consistencia eventual, colas locales e idempotencia. |
-| **CONFLICT_RESOLUTION.md** | Escenarios reales de conflictos distribuidos, alternativas analizadas y decisiones adoptadas para preservar la consistencia del sistema. |
-| **SECURITY.md** | Seguridad de la plataforma, gestión de tokens y autenticación offline. |
-| **RUNNING.md** | Configuración y ejecución local del proyecto. |
+| **ARCHITECTURE.md** | Overall architecture, components, diagrams, and service relationships. |
+| **DESIGNDECISIONS.md** | Architectural decisions, evaluated alternatives, and trade-off analysis. |
+| **SYNCHRONIZATION.md** | Synchronization strategies, eventual consistency, local queues, and idempotency. |
+| **CONFLICT_RESOLUTION.md** | Real distributed conflict scenarios, analyzed alternatives, and decisions adopted to preserve system consistency. |
+| **SECURITY.md** | Platform security, token management, and offline authentication. |
+| **RUNNING.md** | Setup and local execution of the project. |
 
 ---
 
-# Lecciones Aprendidas
+# Lessons Learned
 
-Diseñar una única estrategia de conectividad para toda una plataforma suele conducir a soluciones innecesariamente complejas o insuficientes para determinados escenarios.
+Designing a single connectivity strategy for an entire platform usually leads to unnecessarily complex solutions or solutions insufficient for certain scenarios.
 
-La arquitectura mejora cuando cada cliente recibe únicamente la complejidad que realmente necesita.
+Architecture improves when each client receives only the complexity it genuinely needs.
 
-Las decisiones arquitectónicas más efectivas no nacen de la tecnología elegida.
+The most effective architectural decisions do not stem from the chosen technology.
 
-**Nacen de comprender el problema, identificar las restricciones, evaluar alternativas y seleccionar la solución que mejor responde a las necesidades del negocio.**
-
----
-
-# Más Allá de la Implementación
-
-La implementación presentada demuestra cómo una estrategia híbrida de conectividad puede adaptarse a diferentes necesidades operativas.
-
-Sin embargo, implementar una arquitectura *Offline-First* representa únicamente una parte del desafío.
-
-Los escenarios más complejos aparecen cuando el sistema comienza a operar en condiciones reales, donde la conectividad es intermitente, múltiples clientes modifican la misma información y las operaciones pueden llegar fuera de orden o repetirse.
-
-Algunos ejemplos incluyen:
-
-- Dos clientes modificando el mismo registro de forma simultánea.
-- Operaciones duplicadas debido a reintentos.
-- Sincronizaciones después de varias horas o días sin conexión.
-- Tokens expirados durante largos períodos offline.
-- Eventos recibidos en un orden diferente al que fueron generados.
-- Sincronizaciones parciales o interrumpidas.
-- Clientes con relojes desincronizados.
-- Errores permanentes durante la sincronización.
-
-Cada uno de estos escenarios requiere decisiones arquitectónicas que van mucho más allá de la implementación de un mecanismo de sincronización.
-
-Por esta razón, este repositorio incorpora **CONFLICT_RESOLUTION.md**, un documento dedicado a analizar estos escenarios, estudiar las alternativas consideradas y justificar las decisiones adoptadas para preservar la consistencia e integridad del sistema.
-
-El objetivo no es presentar una solución universal, sino documentar el proceso de razonamiento utilizado para enfrentar problemas habituales en sistemas distribuidos.
+**They stem from understanding the problem, identifying constraints, evaluating alternatives, and selecting the solution that best answers business needs.**
 
 ---
 
-# Próximo Paso
+# Beyond Implementation
 
-La implementación presentada constituye una posible respuesta a este problema de ingeniería.
+The presented implementation demonstrates how a hybrid connectivity strategy can adapt to different operational needs.
 
-Sin embargo, el verdadero objetivo de este caso de estudio no es únicamente mostrar el resultado final, sino documentar el proceso de análisis que permitió llegar a él.
+However, implementing an *Offline-First* architecture represents only part of the challenge.
 
-Si deseas profundizar en la arquitectura, las decisiones tomadas y los desafíos de la sincronización distribuida, puedes continuar con los siguientes documentos:
+The most complex scenarios appear when the system operates under real conditions, where connectivity is intermittent, multiple clients modify the same information, and operations arrive out of order or repeated.
+
+Some examples include:
+
+- Two clients modifying the same record simultaneously.
+- Duplicate operations due to retries.
+- Synchronizations after several hours or days offline.
+- Tokens expired during extended offline periods.
+- Events received in a different order than generated.
+- Partial or interrupted synchronizations.
+- Clients with desynchronized clocks.
+- Permanent errors during synchronization.
+
+Each of these scenarios requires architectural decisions that go far beyond implementing a synchronization mechanism.
+
+For this reason, this repository incorporates **CONFLICT_RESOLUTION.md**, a document dedicated to analyzing these scenarios, studying considered alternatives, and justifying decisions adopted to preserve system consistency and integrity.
+
+The goal is not to present a universal solution, but to document the reasoning process used to face common distributed systems problems.
+
+---
+
+# Next Step
+
+The presented implementation constitutes one possible answer to this engineering problem.
+
+However, the real objective of this case study is not merely to show the final result, but to document the analytical process that made it possible to arrive at it.
+
+If you wish to delve deeper into architecture, decisions made, and distributed synchronization challenges, you can continue with the following documents:
 
 - 📘 **ARCHITECTURE.md**
 - 📘 **DESIGNDECISIONS.md**

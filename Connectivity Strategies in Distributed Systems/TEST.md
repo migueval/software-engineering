@@ -1,28 +1,28 @@
-# Trazabilidad de la Estrategia de Pruebas
+# Testing Strategy Traceability
 
-La estrategia de pruebas definida en este documento se encuentra alineada con las decisiones arquitectónicas y los componentes descritos en el resto de la documentación del proyecto.
+The testing strategy defined in this document is aligned with the architectural decisions and components described throughout the rest of the project documentation.
 
-Cada conjunto de pruebas verifica comportamientos específicos del sistema distribuido, garantizando que las decisiones de diseño puedan validarse de manera objetiva.
+Each test suite verifies specific behaviors of the distributed system, ensuring that design decisions can be objectively validated.
 
-| Documento | Aspectos Verificados |
-|-----------|----------------------|
-| **ARCHITECTURE.md** | Comunicación entre servicios, API Gateway, Redis, RabbitMQ y monitoreo de componentes. |
-| **SECURITY.md** | Login, Step Token, Refresh Token, autorización, expiración de credenciales y seguridad de autenticación. |
-| **SYNCHRONIZATION.md** | Store and Forward, Event Log, Retry, Exponential Backoff e Idempotencia. |
-| **CONFLICT_RESOLUTION.md** | Deduplicación de eventos, concurrencia, stock negativo y resolución de conflictos. |
-| **DESIGNDECISIONS.md** | Validación de las principales decisiones arquitectónicas adoptadas durante el diseño del sistema. |
+| Document | Verified Aspects |
+|-----------|------------------|
+| **ARCHITECTURE.md** | Service communication, API Gateway, Redis, RabbitMQ, and component monitoring. |
+| **SECURITY.md** | Login, Step Token, Refresh Token, authorization, credential expiration, and authentication security. |
+| **SYNCHRONIZATION.md** | Store and Forward, Event Log, Retry, Exponential Backoff, and Idempotency. |
+| **CONFLICT_RESOLUTION.md** | Event deduplication, concurrency, negative inventory, and conflict resolution. |
+| **DESIGNDECISIONS.md** | Validation of key architectural decisions adopted during system design. |
 
 ---
 
-# Pirámide de Pruebas Distribuidas
+# Distributed Testing Pyramid
 
-La estrategia de automatización sigue una adaptación de la pirámide clásica de pruebas para arquitecturas distribuidas con clientes Offline-First.
+The automation strategy follows an adaptation of the classic testing pyramid tailored for distributed architectures with Offline-First clients.
 
 ```mermaid
 flowchart BT
-    E2E["Pruebas de Resiliencia y Caos"]
-    INT["Pruebas de Integración"]
-    UNIT["Pruebas Unitarias"]
+    E2E["Resilience & Chaos Testing"]
+    INT["Integration Testing"]
+    UNIT["Unit Testing"]
 
     UNIT --> INT
     INT --> E2E
@@ -36,73 +36,73 @@ flowchart BT
     class E2E e2e;
 ```
 
-## 1. Pruebas Unitarias
+## 1. Unit Testing
 
-Constituyen la base de la estrategia de automatización y verifican la lógica de negocio de cada servicio de NestJS en aislamiento, utilizando objetos simulados (*Mocks*) para dependencias externas como TypeORM, Redis y RabbitMQ.
-
----
-
-## 2. Pruebas de Integración
-
-Validan la interacción entre los distintos componentes del sistema, verificando la comunicación entre el API Gateway, PostgreSQL, Redis y RabbitMQ bajo escenarios representativos de la arquitectura distribuida.
+Forms the foundation of the automation strategy and verifies the business logic of each NestJS service in isolation, using mock objects (*Mocks*) for external dependencies such as TypeORM, Redis, and RabbitMQ.
 
 ---
 
-## 3. Pruebas de Resiliencia y Caos
+## 2. Integration Testing
 
-Evalúan el comportamiento del sistema frente a fallos propios de arquitecturas distribuidas, como particiones de red, pérdida de conectividad, duplicación de eventos, condiciones de carrera y desviaciones temporales entre clientes y servidor.
+Validates interactions between different system components, verifying communication between the API Gateway, PostgreSQL, Redis, and RabbitMQ under representative distributed architecture scenarios.
 
 ---
 
-> **Nota**
+## 3. Resilience and Chaos Testing
+
+Evaluates system behavior under failure conditions inherent to distributed architectures, such as network partitions, connectivity loss, event duplication, race conditions, and clock drift between clients and server.
+
+---
+
+> **Note**
 >
-> Los siguientes escenarios representan pruebas de resiliencia diseñadas para validar el comportamiento de la arquitectura frente a fallos propios de sistemas distribuidos. Dependiendo del entorno de ejecución, estos escenarios pueden implementarse mediante pruebas automatizadas, entornos de integración o simulaciones controladas.
+> The following scenarios represent resilience tests designed to validate architectural behavior under failure conditions typical of distributed systems. Depending on the execution environment, these scenarios can be implemented through automated tests, integration environments, or controlled simulations.
 
 ---
 
-# Matriz de Cobertura de Pruebas
+# Test Coverage Matrix
 
-| Módulo Evaluado | Archivo de Prueba | Escenarios Principales |
+| Evaluated Module | Test File | Primary Scenarios |
 |-----------------|-------------------|------------------------|
-| **Autenticación** | `auth.service.spec.ts` | Login, Step Token, Cambio de Contraseña y Refresh Token. |
-| **Usuarios** | `users.service.spec.ts` | Creación de usuarios, contraseña temporal y publicación de eventos en RabbitMQ. |
-| **Sincronización** | `sync.service.spec.ts` | Idempotencia, deduplicación de eventos, stock negativo y procesamiento de ventas. |
-| **Monitoreo** | `monitoring.service.spec.ts` | Heartbeats, expiración de TTL en Redis y actualización del estado de presencia. |
+| **Authentication** | `auth.service.spec.ts` | Login, Step Token, Password Change, and Refresh Token. |
+| **Users** | `users.service.spec.ts` | User creation, temporary password, and RabbitMQ event publishing. |
+| **Synchronization** | `sync.service.spec.ts` | Idempotency, event deduplication, negative inventory, and sales processing. |
+| **Monitoring** | `monitoring.service.spec.ts` | Heartbeats, Redis TTL expiration, and presence state updates. |
 
 ---
 
-# Alcance de la Estrategia de Pruebas
+# Scope of Testing Strategy
 
-Este documento describe la estrategia de validación propuesta para el caso de estudio y los principales escenarios considerados durante el diseño de la arquitectura.
+This document describes the proposed validation strategy for the case study and the main scenarios considered during architectural design.
 
-El alcance incluye:
+The scope includes:
 
-- Pruebas unitarias de los servicios de dominio.
-- Pruebas de integración entre componentes.
-- Validación de sincronización e idempotencia.
-- Escenarios de resiliencia frente a fallos de infraestructura.
-- Verificación de eventos asíncronos y mecanismos de monitoreo.
+- Unit testing of domain services.
+- Integration testing between components.
+- Validation of synchronization and idempotency.
+- Resilience scenarios facing infrastructure failures.
+- Verification of asynchronous events and monitoring mechanisms.
 
-No forman parte del alcance de este documento:
+Out of scope for this document:
 
-- Pruebas de rendimiento (*Performance Testing*).
-- Pruebas de carga (*Load Testing*).
-- Pruebas de estrés (*Stress Testing*).
-- Auditorías externas de seguridad.
-- Pruebas de penetración (*Penetration Testing*).
+- Performance Testing.
+- Load Testing.
+- Stress Testing.
+- External security audits.
+- Penetration Testing.
 
-Estos aspectos requieren herramientas, infraestructura y metodologías especializadas que exceden el objetivo de este caso de estudio.
+These aspects require specialized tools, infrastructure, and methodologies that exceed the scope of this case study.
 
 ---
 
-# Conclusión
+# Conclusion
 
-La estrategia de pruebas presentada en este documento busca validar tanto el comportamiento funcional como la resiliencia de una arquitectura distribuida basada en estrategias de conectividad diferenciadas.
+The testing strategy presented in this document seeks to validate both functional behavior and resilience of a distributed architecture based on differentiated connectivity strategies.
 
-Más allá de comprobar que cada componente funciona de manera aislada, las pruebas verifican que el sistema mantenga sus propiedades fundamentales ante fallos de infraestructura, pérdida de conectividad y procesamiento concurrente de eventos.
+Beyond proving that each component works in isolation, testing verifies that the system maintains fundamental properties under infrastructure failures, loss of connectivity, and concurrent event processing.
 
-Esta aproximación permite evaluar decisiones arquitectónicas como la persistencia local, la sincronización diferida, la idempotencia, el monitoreo mediante Heartbeats y la comunicación asíncrona entre servicios.
+This approach allows evaluating architectural decisions such as local persistence, deferred synchronization, idempotency, Heartbeat monitoring, and asynchronous service communication.
 
-En conjunto, las pruebas proporcionan un mecanismo sistemático para validar que las decisiones descritas en **ARCHITECTURE.md**, **SECURITY.md**, **SYNCHRONIZATION.md**, **CONFLICT_RESOLUTION.md** y **DESIGNDECISIONS.md** se comportan conforme a los objetivos planteados para este caso de estudio.
+Together, the tests provide a systematic mechanism to validate that decisions described in **ARCHITECTURE.md**, **SECURITY.md**, **SYNCHRONIZATION.md**, **CONFLICT_RESOLUTION.md**, and **DESIGNDECISIONS.md** behave in accordance with the goals established for this case study.
 
-Aunque este documento no aborda pruebas de rendimiento o auditorías de seguridad especializadas, establece una base sólida para validar la funcionalidad, la integridad y la resiliencia del sistema bajo escenarios representativos de un entorno distribuido.
+Although this document does not address performance testing or specialized security audits, it establishes a solid foundation to validate functionality, integrity, and resilience of the system under representative scenarios of a distributed environment.

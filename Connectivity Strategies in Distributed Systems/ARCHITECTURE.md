@@ -1,138 +1,138 @@
-# 🏛️ Arquitectura Técnica
+# 🏛️ Technical Architecture
 
-## Caso de Estudio 2: Estrategias de Conectividad en Sistemas Distribuidos
-
----
-
-# Introducción
-
-Este documento describe la arquitectura técnica utilizada para implementar las distintas estrategias de conectividad definidas durante el análisis del problema.
-
-El objetivo de esta arquitectura no es imponer una única forma de comunicación para todos los clientes.
-
-Por el contrario, cada cliente utiliza el mecanismo que mejor responde a sus restricciones operativas.
-
-La plataforma combina:
-
-- Comunicación síncrona mediante REST.
-- Comunicación en tiempo real mediante WebSockets.
-- Procesamiento asíncrono mediante RabbitMQ.
-- Persistencia central mediante PostgreSQL.
-- Persistencia local mediante SQLite.
-- Coordinación de estado temporal mediante Redis.
-- Microservicios desarrollados con NestJS.
-
-La tecnología se selecciona después de comprender el comportamiento esperado de cada cliente.
+## Case Study 2: Connectivity Strategies in Distributed Systems
 
 ---
 
-# Alcance
+# Introduction
 
-Este documento se concentra en las decisiones técnicas necesarias para implementar diferentes estrategias de conectividad dentro de una misma plataforma.
+This document describes the technical architecture used to implement the various connectivity strategies defined during the problem analysis.
 
-El caso de estudio analiza principalmente:
+The goal of this architecture is not to impose a single communication mechanism for all clients.
 
-- Clientes Online-First.
-- Clientes Offline-First.
-- Clientes Online-First Permisivos.
-- Persistencia local.
-- Sincronización diferida.
-- Idempotencia.
-- Procesamiento asíncrono.
+On the contrary, each client uses the mechanism that best addresses its operational constraints.
+
+The platform combines:
+
+- Synchronous communication via REST.
+- Real-time communication via WebSockets.
+- Asynchronous processing via RabbitMQ.
+- Central persistence via PostgreSQL.
+- Local persistence via SQLite.
+- Temporary state coordination via Redis.
+- Microservices developed with NestJS.
+
+Technology is selected after understanding the expected behavior of each client.
+
+---
+
+# Scope
+
+This document focuses on the technical decisions required to implement different connectivity strategies within the same platform.
+
+The case study primarily analyzes:
+
+- Online-First clients.
+- Offline-First clients.
+- Permissive Online-First clients.
+- Local persistence.
+- Deferred synchronization.
+- Idempotency.
+- Asynchronous processing.
 - Heartbeats.
-- Monitoreo de conectividad.
-- Comunicación en tiempo real.
-- Coordinación entre microservicios.
+- Connectivity monitoring.
+- Real-time communication.
+- Microservice coordination.
 
-No se pretende construir un framework universal de sincronización ni resolver todas las posibles decisiones de infraestructura de una arquitectura distribuida.
+It does not attempt to construct a universal synchronization framework or resolve all possible infrastructure decisions of a distributed architecture.
 
-En particular, la estrategia de bases de datos independientes por microservicio queda fuera del alcance.
-
----
-
-# Objetivos de la Arquitectura
-
-La arquitectura busca cumplir los siguientes objetivos:
-
-- Permitir que el Punto de Venta continúe operando sin conexión.
-- Mantener información actualizada en la aplicación administrativa.
-- Tolerar interrupciones temporales en la aplicación logística.
-- Evitar el procesamiento duplicado de operaciones.
-- Desacoplar el procesamiento interno de los microservicios.
-- Detectar clientes conectados y desconectados.
-- Mantener una fuente de verdad central.
-- Limitar el uso de WebSockets a escenarios que realmente requieren tiempo real.
-- Recuperar operaciones después de fallos o reinicios.
-- Facilitar la evolución independiente de los componentes.
-- Aplicar complejidad únicamente donde aporta valor al negocio.
+In particular, independent database per microservice strategy is out of scope.
 
 ---
 
-# Decisiones Arquitectónicas Clave
+# Architectural Objectives
 
-La arquitectura adopta un conjunto de decisiones destinadas a equilibrar continuidad operativa, consistencia, simplicidad y costo de implementación.
+The architecture aims to achieve the following objectives:
 
-Estas decisiones no representan reglas universales para todos los sistemas distribuidos.
-
-Responden específicamente a las restricciones y objetivos de este caso de estudio.
-
-- **Offline-First únicamente donde la continuidad operativa es crítica.**  
-  El Punto de Venta debe continuar registrando operaciones aunque el backend o la conexión no estén disponibles.
-
-- **Online-First para clientes cuya principal necesidad es trabajar con información actualizada.**  
-  La aplicación administrativa consulta directamente el estado central del sistema.
-
-- **Online-First Permisivo para interrupciones temporales.**  
-  La aplicación logística utiliza el backend como fuente principal, pero conserva temporalmente las operaciones que no pueden enviarse.
-
-- **REST como mecanismo principal de comunicación cliente-servidor.**  
-  Las consultas, comandos, autenticación y sincronizaciones utilizan un modelo de solicitud y respuesta.
-
-- **WebSockets únicamente cuando la comunicación inmediata aporta valor.**  
-  Se utilizan para heartbeats, cambios de conectividad, alertas y eventos operativos específicos.
-
-- **RabbitMQ como mecanismo de desacoplamiento interno.**  
-  Los microservicios publican y consumen eventos de manera asíncrona sin depender directamente de la disponibilidad inmediata de otros servicios.
-
-- **PostgreSQL como fuente central de verdad.**  
-  El estado definitivo de ventas, inventario, usuarios, configuraciones y operaciones se conserva en la base de datos central.
-
-- **Una única instancia de PostgreSQL para el alcance de este caso de estudio.**  
-  Los microservicios utilizan una instancia compartida de PostgreSQL, manteniendo una separación lógica entre sus responsabilidades.
-
-- **Redis para coordinación temporal e idempotencia.**  
-  Se utiliza para heartbeats, sesiones, claves temporales, bloqueos distribuidos y detección rápida de operaciones repetidas.
-
-- **SQLite como persistencia local del Punto de Venta.**  
-  Permite registrar operaciones, mantener una cola local y recuperar el estado pendiente después de cierres o reinicios.
-
-- **PostgreSQL conserva el estado definitivo, mientras que SQLite conserva el estado operativo local.**  
-  La información local permite continuidad, pero debe reconciliarse posteriormente con la fuente central.
-
-- **La confirmación de una operación representa su procesamiento real.**  
-  Publicar un mensaje en RabbitMQ no se considera una confirmación definitiva. El cliente recibe la confirmación cuando la operación ha sido procesada y su resultado ha sido registrado.
+- Allow Point of Sale to continue operating without a connection.
+- Maintain up-to-date information in the administration application.
+- Tolerate temporary disruptions in the logistics application.
+- Prevent duplicate operation processing.
+- Decouple internal microservice processing.
+- Detect connected and disconnected clients.
+- Maintain a central source of truth.
+- Limit WebSocket usage strictly to scenarios that genuinely require real-time capabilities.
+- Recover operations after failures or restarts.
+- Facilitate independent evolution of components.
+- Apply complexity only where it delivers business value.
 
 ---
 
-# Arquitectura General
+# Key Architectural Decisions
 
-La plataforma está compuesta por tres clientes, un API Gateway, varios microservicios y componentes de infraestructura compartidos.
+The architecture adopts a set of decisions intended to balance operational continuity, consistency, simplicity, and implementation cost.
+
+These decisions do not represent universal rules for all distributed systems.
+
+They respond specifically to the constraints and objectives of this case study.
+
+- **Offline-First only where operational continuity is critical.**  
+  Point of Sale must continue recording operations even if the backend or connection is unavailable.
+
+- **Online-First for clients whose main need is working with up-to-date information.**  
+  The administration application directly queries the central system state.
+
+- **Permissive Online-First for temporary disruptions.**  
+  The logistics application uses the backend as primary source, but temporarily retains operations that cannot be sent.
+
+- **REST as the primary client-server communication mechanism.**  
+  Queries, commands, authentication, and synchronizations use a request-response model.
+
+- **WebSockets only when immediate communication adds value.**  
+  Used for heartbeats, connectivity state changes, alerts, and specific operational events.
+
+- **RabbitMQ as the internal decoupling mechanism.**  
+  Microservices publish and consume events asynchronously without directly depending on immediate availability of other services.
+
+- **PostgreSQL as the central source of truth.**  
+  Definitive state of sales, inventory, users, configurations, and operations resides in the central database.
+
+- **Single PostgreSQL instance for the scope of this case study.**  
+  Microservices share a PostgreSQL instance while maintaining logical separation of responsibilities.
+
+- **Redis for temporal coordination and idempotency.**  
+  Used for heartbeats, sessions, temporary keys, distributed locks, and fast detection of repeated operations.
+
+- **SQLite for Point of Sale local persistence.**  
+  Allows recording operations, maintaining a local queue, and recovering pending state after application closes or restarts.
+
+- **PostgreSQL retains definitive state while SQLite retains local operational state.**  
+  Local data enables continuity but must be subsequently reconciled with the central source.
+
+- **Operation confirmation represents actual processing.**  
+  Publishing a message to RabbitMQ is not considered definitive confirmation. The client receives confirmation when the operation has been processed and its result recorded.
+
+---
+
+# Overall Architecture
+
+The platform comprises three clients, an API Gateway, several microservices, and shared infrastructure components.
 
 ```mermaid
 flowchart LR
 
-    subgraph CLIENTS["Clientes"]
-        ADMIN["Administración<br/>Angular"]
-        POS["Punto de Venta<br/>Flutter + SQLite"]
-        LOGISTICS_APP["Logística<br/>Flutter"]
+    subgraph CLIENTS["Clients"]
+        ADMIN["Administration<br/>Angular"]
+        POS["Point of Sale<br/>Flutter + SQLite"]
+        LOGISTICS_APP["Logistics<br/>Flutter"]
     end
 
-    subgraph ENTRY["Entrada a la plataforma"]
+    subgraph ENTRY["Platform Entry"]
         API["API Gateway<br/>NestJS"]
         WS["WebSocket Gateway<br/>NestJS"]
     end
 
-    subgraph SERVICES["Microservicios NestJS"]
+    subgraph SERVICES["NestJS Microservices"]
         AUTH["Authentication Service"]
         SALES["Sales Service"]
         INVENTORY["Inventory Service"]
@@ -142,8 +142,8 @@ flowchart LR
         NOTIFY["Notification Service"]
     end
 
-    subgraph INFRA["Infraestructura compartida"]
-        PG[("PostgreSQL<br/>Instancia compartida")]
+    subgraph INFRA["Shared Infrastructure"]
+        PG[("PostgreSQL<br/>Shared Instance")]
         REDIS[("Redis")]
         MQ[["RabbitMQ"]]
     end
@@ -152,7 +152,7 @@ flowchart LR
     POS -->|"REST"| API
     LOGISTICS_APP -->|"REST"| API
 
-    ADMIN <-.->|"Eventos específicos"| WS
+    ADMIN <-.->|"Specific Events"| WS
     POS -.->|"Heartbeat"| WS
     LOGISTICS_APP -.->|"Heartbeat"| WS
 
@@ -182,33 +182,33 @@ flowchart LR
     NOTIFY <--> MQ
 ```
 
-Todos los clientes utilizan la misma plataforma backend.
+All clients use the same backend platform.
 
-Sin embargo, cada uno aplica una estrategia de conectividad diferente.
+However, each applies a different connectivity strategy.
 
 ---
 
-# Vista de Alto Nivel
+# High-Level View
 
-La arquitectura separa las responsabilidades según el tipo de comunicación y persistencia requerido.
+The architecture separates responsibilities according to the required communication and persistence type.
 
 ```mermaid
 flowchart TD
 
-    CLIENTS["Clientes<br/>Angular y Flutter"]
+    CLIENTS["Clients<br/>Angular & Flutter"]
 
-    REST["REST<br/>Operaciones de negocio"]
-    WEBSOCKET["WebSockets<br/>Heartbeats y eventos"]
-    RABBIT["RabbitMQ<br/>Mensajería interna"]
-    REDIS["Redis<br/>Estado temporal"]
-    POSTGRES["PostgreSQL<br/>Estado definitivo"]
-    SQLITE["SQLite<br/>Estado local del POS"]
+    REST["REST<br/>Business Operations"]
+    WEBSOCKET["WebSockets<br/>Heartbeats & Events"]
+    RABBIT["RabbitMQ<br/>Internal Messaging"]
+    REDIS["Redis<br/>Temporal State"]
+    POSTGRES["PostgreSQL<br/>Definitive State"]
+    SQLITE["SQLite<br/>POS Local State"]
 
     CLIENTS --> REST
     CLIENTS -.-> WEBSOCKET
     CLIENTS --> SQLITE
 
-    SQLITE -->|"Sincronización"| REST
+    SQLITE -->|"Synchronization"| REST
 
     REST --> POSTGRES
     REST --> RABBIT
@@ -219,35 +219,35 @@ flowchart TD
     RABBIT --> REDIS
 ```
 
-La separación puede resumirse de la siguiente manera:
+The separation can be summarized as follows:
 
-> **REST procesa solicitudes del negocio. WebSockets comunica eventos inmediatos. RabbitMQ desacopla servicios. Redis coordina estado temporal. PostgreSQL conserva el estado definitivo. SQLite garantiza continuidad local.**
+> **REST processes business requests. WebSockets communicates immediate events. RabbitMQ decouples services. Redis coordinates temporal state. PostgreSQL preserves definitive state. SQLite guarantees local continuity.**
 
 ---
 
-# Estrategia de Conectividad por Cliente
+# Client Connectivity Strategy
 
-Cada cliente selecciona su estrategia según las restricciones del negocio.
+Each client selects its strategy based on business constraints.
 
 ```mermaid
 flowchart TD
 
-    CLIENT["Cliente"]
+    CLIENT["Client"]
 
-    CONTINUITY{"¿La operación debe continuar<br/>sin conexión?"}
-    REALTIME{"¿Necesita información<br/>actualizada inmediatamente?"}
+    CONTINUITY{"Must operations continue<br/>without a connection?"}
+    REALTIME{"Does it need real-time<br/>updated information?"}
 
     OFFLINE["Offline-First"]
     ONLINE["Online-First"]
-    PERMISSIVE["Online-First Permisivo"]
+    PERMISSIVE["Permissive Online-First"]
 
     CLIENT --> CONTINUITY
 
-    CONTINUITY -->|"Sí"| OFFLINE
+    CONTINUITY -->|"Yes"| OFFLINE
     CONTINUITY -->|"No"| REALTIME
 
-    REALTIME -->|"Sí"| ONLINE
-    REALTIME -->|"No, pero debe tolerar fallos breves"| PERMISSIVE
+    REALTIME -->|"Yes"| ONLINE
+    REALTIME -->|"No, but must tolerate brief disruptions"| PERMISSIVE
 
     classDef decision fill:#fff3cd,stroke:#b8860b,color:#212529
     classDef offline fill:#d1e7dd,stroke:#198754,color:#212529
@@ -262,38 +262,38 @@ flowchart TD
 
 ---
 
-# Administración
+# Administration
 
-## Estrategia
+## Strategy
 
 **Online-First**
 
-## Tecnología principal
+## Primary Technology
 
 **Angular**
 
-## Objetivo
+## Objective
 
-Mantener una visión actualizada del estado global de la operación.
+Maintain an updated view of global operational state.
 
-## Características
+## Characteristics
 
-- Información actualizada.
-- Fuente central de verdad.
-- Sin almacenamiento persistente local.
-- Consultas mediante REST.
-- Notificaciones específicas mediante WebSockets.
-- Baja complejidad de sincronización.
+- Up-to-date information.
+- Central source of truth.
+- No local persistent storage.
+- Queries via REST.
+- Specific notifications via WebSockets.
+- Low synchronization complexity.
 
-## Flujo principal
+## Main Flow
 
 ```mermaid
 flowchart LR
 
-    USER["Usuario"]
+    USER["User"]
     ANGULAR["Angular"]
     API["API Gateway"]
-    SERVICE["Microservicio"]
+    SERVICE["Microservice"]
     DB[("PostgreSQL")]
 
     USER --> ANGULAR
@@ -305,102 +305,102 @@ flowchart LR
     API --> ANGULAR
 ```
 
-## Actualizaciones en tiempo real
+## Real-Time Updates
 
-La aplicación administrativa no utiliza WebSockets para todas sus operaciones.
+The administrative application does not use WebSockets for all operations.
 
-REST continúa siendo el mecanismo principal.
+REST remains the primary mechanism.
 
-WebSockets se utiliza únicamente para notificaciones que deben llegar al cliente sin esperar una nueva consulta.
+WebSockets is used exclusively for notifications that must reach the client without waiting for a poll.
 
 ```mermaid
 sequenceDiagram
 
-    participant Service as Microservicio
+    participant Service as Microservice
     participant MQ as RabbitMQ
     participant Notification as Notification Service
     participant WS as WebSocket Gateway
     participant Admin as Angular Admin
 
-    Service->>MQ: Publicar evento relevante
-    MQ->>Notification: Entregar evento
-    Notification->>WS: Preparar notificación
-    WS-->>Admin: Enviar actualización
+    Service->>MQ: Publish relevant event
+    MQ->>Notification: Deliver event
+    Notification->>WS: Prepare notification
+    WS-->>Admin: Send update
 ```
 
-Ejemplos:
+Examples:
 
-- Una terminal cambia de estado.
-- Una sincronización termina.
-- Se detecta una alerta operativa.
-- Una venta afecta un indicador visible.
-- Se produce un evento que requiere atención administrativa.
+- A terminal changes state.
+- A synchronization completes.
+- An operational alert is detected.
+- A sale affects a visible indicator.
+- An event occurs requiring administrative attention.
 
 ---
 
-# Punto de Venta
+# Point of Sale
 
-## Estrategia
+## Strategy
 
 **Offline-First**
 
-## Tecnología principal
+## Primary Technology
 
-**Flutter con SQLite**
+**Flutter with SQLite**
 
-## Objetivo
+## Objective
 
-Garantizar la continuidad operativa incluso cuando el servidor no está disponible.
+Guarantee operational continuity even when server is unavailable.
 
-## Características
+## Characteristics
 
-- Persistencia local.
-- Operación autónoma.
-- Cola local.
-- Sincronización diferida.
-- Reintentos automáticos.
-- Idempotencia.
-- Consistencia eventual.
+- Local persistence.
+- Autonomous operation.
+- Local queue.
+- Deferred synchronization.
+- Automatic retries.
+- Idempotency.
+- Eventual consistency.
 
-## Flujo local
+## Local Flow
 
 ```mermaid
 flowchart TD
 
-    USER["Usuario"]
+    USER["User"]
     POS["Flutter POS"]
     DB[("SQLite")]
-    QUEUE["Cola local"]
-    SYNC_ENGINE["Motor de sincronización"]
+    QUEUE["Local Queue"]
+    SYNC_ENGINE["Sync Engine"]
 
-    USER -->|"Registrar venta"| POS
+    USER -->|"Register sale"| POS
     POS --> DB
-    DB -->|"Venta almacenada"| POS
+    DB -->|"Stored sale"| POS
     DB --> QUEUE
     QUEUE --> SYNC_ENGINE
 ```
 
-La operación se confirma localmente antes de depender del backend.
+The operation is confirmed locally before depending on the backend.
 
-Esto permite que el negocio continúe funcionando aunque:
+This allows business operations to continue even if:
 
-- No exista conexión a Internet.
-- El API Gateway no esté disponible.
-- RabbitMQ se encuentre temporalmente inaccesible.
-- Algún microservicio esté reiniciándose.
+- No Internet connection exists.
+- API Gateway is unavailable.
+- RabbitMQ is temporarily unreachable.
+- A microservice is restarting.
 
-## Recuperación de conectividad
+## Connectivity Recovery
 
 ```mermaid
 flowchart LR
 
     SQLITE[("SQLite")]
-    LOCAL_QUEUE["Operaciones pendientes"]
-    SYNC_ENGINE["Motor de sincronización"]
+    LOCAL_QUEUE["Pending Operations"]
+    SYNC_ENGINE["Sync Engine"]
     API["API Gateway"]
     SYNC_SERVICE["Synchronization Service"]
     MQ[["RabbitMQ"]]
-    SERVICE["Microservicio"]
+    SERVICE["Microservice"]
     PG[("PostgreSQL")]
 
     SQLITE --> LOCAL_QUEUE
@@ -412,45 +412,45 @@ flowchart LR
     SERVICE --> PG
 ```
 
-RabbitMQ no reemplaza la cola local.
+RabbitMQ does not replace the local queue.
 
-- SQLite conserva las operaciones cuando el cliente no tiene conexión.
-- RabbitMQ coordina el procesamiento cuando la operación ya alcanzó el backend.
+- SQLite retains operations when the client is disconnected.
+- RabbitMQ coordinates processing once the operation reaches the backend.
 
 ---
 
-# Logística
+# Logistics
 
-## Estrategia
+## Strategy
 
-**Online-First Permisivo**
+**Permissive Online-First**
 
-## Tecnología principal
+## Primary Technology
 
 **Flutter**
 
-## Objetivo
+## Objective
 
-Trabajar principalmente con información centralizada, pero tolerar interrupciones temporales sin perder operaciones.
+Work primarily with centralized data while tolerating temporary disruptions without losing operations.
 
-## Características
+## Characteristics
 
-- REST como canal principal.
-- Caché local temporal.
-- Reintentos automáticos.
-- Operaciones pendientes limitadas.
-- Menor autonomía que el POS.
-- Menor complejidad de sincronización.
+- REST as primary channel.
+- Temporary local cache.
+- Automatic retries.
+- Limited pending operations.
+- Less autonomy than POS.
+- Lower synchronization complexity.
 
-## Flujo
+## Flow
 
 ```mermaid
 flowchart LR
 
-    USER["Usuario"]
-    APP["Flutter Logística"]
-    CACHE[("Caché local")]
-    RETRY["Gestor de reintentos"]
+    USER["User"]
+    APP["Flutter Logistics"]
+    CACHE[("Local Cache")]
+    RETRY["Retry Manager"]
     API["API Gateway"]
     SERVICE["Logistics Service"]
     DB[("PostgreSQL")]
@@ -460,38 +460,38 @@ flowchart LR
     API --> SERVICE
     SERVICE --> DB
 
-    APP -->|"Fallo temporal"| CACHE
+    APP -->|"Temporary failure"| CACHE
     CACHE --> RETRY
-    RETRY -->|"Nueva solicitud REST"| API
+    RETRY -->|"New REST Request"| API
 ```
 
-La aplicación logística no pretende operar durante períodos prolongados completamente desconectada.
+The logistics app is not designed to operate for extended periods fully disconnected.
 
-Su almacenamiento local funciona como una protección temporal y no como una base de datos operativa autónoma.
+Its local storage serves as a temporary safeguard rather than an autonomous operational database.
 
 ---
 
-# Tecnologías Utilizadas
+# Technologies Used
 
-Una vez definidas las estrategias de conectividad, se seleccionaron las tecnologías necesarias para implementar cada responsabilidad.
+Once connectivity strategies were established, technologies were selected for each responsibility.
 
-| Tecnología | Responsabilidad |
+| Technology | Responsibility |
 |---|---|
-| **NestJS** | API Gateway, WebSocket Gateway y microservicios |
-| **Angular** | Aplicación administrativa Online-First |
-| **Flutter** | Aplicaciones de Punto de Venta y logística |
-| **SQLite** | Persistencia local y cola de operaciones del POS |
-| **PostgreSQL** | Persistencia central y fuente de verdad |
-| **Redis** | Heartbeats, sesiones, idempotencia y estado temporal |
-| **RabbitMQ** | Mensajería asíncrona entre microservicios |
-| **REST** | Operaciones síncronas entre clientes y backend |
-| **WebSockets** | Heartbeats y eventos específicos en tiempo real |
+| **NestJS** | API Gateway, WebSocket Gateway, and microservices |
+| **Angular** | Online-First administrative application |
+| **Flutter** | Point of Sale and logistics applications |
+| **SQLite** | Local persistence and POS operation queue |
+| **PostgreSQL** | Central persistence and source of truth |
+| **Redis** | Heartbeats, sessions, idempotency, and temporal state |
+| **RabbitMQ** | Asynchronous messaging between microservices |
+| **REST** | Synchronous operations between clients and backend |
+| **WebSockets** | Real-time heartbeats and specific events |
 
 ---
 
-# Arquitectura de Microservicios
+# Microservice Architecture
 
-El backend se organiza como un conjunto de servicios con responsabilidades separadas.
+The backend is organized as a set of services with separated responsibilities.
 
 ```mermaid
 flowchart TD
@@ -506,7 +506,7 @@ flowchart TD
     MONITOR["Monitoring Service"]
     NOTIFY["Notification Service"]
 
-    PG[("PostgreSQL<br/>Instancia compartida")]
+    PG[("PostgreSQL<br/>Shared Instance")]
     REDIS[("Redis")]
     MQ[["RabbitMQ"]]
 
@@ -535,29 +535,29 @@ flowchart TD
     MONITOR --> NOTIFY
 ```
 
-## Responsabilidad de los servicios
+## Service Responsibilities
 
-| Servicio | Responsabilidad principal |
+| Service | Main Responsibility |
 |---|---|
-| **API Gateway** | Punto de entrada, autenticación inicial, validación y enrutamiento |
-| **Authentication Service** | Login, sesiones, tokens, RBAC y credenciales temporales |
-| **Sales Service** | Registro y procesamiento de ventas |
-| **Inventory Service** | Stock, movimientos y disponibilidad |
-| **Synchronization Service** | Recepción de operaciones offline, validación y reconciliación |
-| **Logistics Service** | Procesamiento de operaciones logísticas |
-| **Monitoring Service** | Heartbeats y estado de conectividad |
-| **Notification Service** | Distribución de alertas y eventos en tiempo real |
+| **API Gateway** | Entry point, initial authentication, validation, and routing |
+| **Authentication Service** | Login, sessions, tokens, RBAC, and temporary credentials |
+| **Sales Service** | Recording and processing sales |
+| **Inventory Service** | Stock, movements, and availability |
+| **Synchronization Service** | Receiving offline operations, validation, and reconciliation |
+| **Logistics Service** | Processing logistics operations |
+| **Monitoring Service** | Heartbeats and connectivity state |
+| **Notification Service** | Real-time alert and event distribution |
 
 ---
 
-# Persistencia Central Compartida
+# Shared Central Persistence
 
-Para mantener el caso de estudio enfocado en conectividad y sincronización, todos los microservicios utilizan una única instancia de PostgreSQL.
+To keep the case study focused on connectivity and synchronization, all microservices share a single PostgreSQL instance.
 
 ```mermaid
 flowchart TD
 
-    subgraph SERVICES["Microservicios NestJS"]
+    subgraph SERVICES["NestJS Microservices"]
         AUTH["Authentication Service"]
         SALES["Sales Service"]
         INVENTORY["Inventory Service"]
@@ -565,7 +565,7 @@ flowchart TD
         LOGISTICS["Logistics Service"]
     end
 
-    PG[("PostgreSQL<br/>Instancia compartida")]
+    PG[("PostgreSQL<br/>Shared Instance")]
 
     AUTH --> PG
     SALES --> PG
@@ -574,72 +574,72 @@ flowchart TD
     LOGISTICS --> PG
 ```
 
-Aunque los servicios comparten la infraestructura de persistencia, cada uno conserva responsabilidades delimitadas.
+While services share persistence infrastructure, each maintains delimited responsibilities.
 
-La separación lógica puede mantenerse mediante:
+Logical separation is maintained via:
 
-- Módulos de dominio independientes.
-- Repositorios propios por servicio.
-- Tablas organizadas por responsabilidad.
-- Esquemas separados cuando resulte conveniente.
-- Acceso controlado a los datos.
-- Contratos definidos entre servicios.
-- Reglas que impidan modificar directamente el dominio de otro servicio.
+- Independent domain modules.
+- Service-owned repositories.
+- Tables organized by responsibility.
+- Separate schemas where appropriate.
+- Controlled data access.
+- Defined service contracts.
+- Rules prohibiting direct modification of another service's domain.
 
-> **Compartir una instancia de PostgreSQL no significa compartir indiscriminadamente las responsabilidades del dominio.**
+> **Sharing a PostgreSQL instance does not mean indiscriminately sharing domain responsibilities.**
 
 ---
 
-# Decisiones de Persistencia Fuera de Alcance
+# Persistence Decisions Out of Scope
 
-Este caso de estudio no compara las siguientes alternativas:
+This case study does not compare:
 
-- Una base de datos independiente por microservicio.
-- Una instancia de PostgreSQL por servicio.
-- Transacciones distribuidas.
-- Patrones Saga.
-- Replicación de datos entre servicios.
+- Independent database per microservice.
+- Separate PostgreSQL instance per service.
+- Distributed transactions.
+- Saga patterns.
+- Data replication between services.
 - Change Data Capture.
 - Event Sourcing.
-- CQRS como estrategia principal.
-- Consistencia entre múltiples bases de datos.
+- CQRS as primary strategy.
+- Multi-database consistency.
 
-Estas alternativas son relevantes en arquitecturas distribuidas, pero incorporarlas desviaría el análisis del objetivo central:
+These alternatives are relevant in distributed architectures, but incorporating them would divert focus from the main objective:
 
-> **Evaluar cómo diferentes estrategias de conectividad afectan el comportamiento de los clientes y la sincronización de operaciones.**
+> **Evaluating how different connectivity strategies affect client behavior and operation synchronization.**
 
 ---
 
-# Comunicación Cliente-Servidor
+# Client-Server Communication
 
-La plataforma utiliza una estrategia híbrida.
+The platform uses a hybrid strategy.
 
-No todas las operaciones requieren una conexión persistente.
+Not all operations require a persistent connection.
 
 ---
 
 ## REST
 
-REST es el mecanismo principal de comunicación entre los clientes y el API Gateway.
+REST is the primary communication mechanism between clients and API Gateway.
 
-### Responsabilidades
+### Responsibilities
 
 - Login.
 - Refresh Token.
-- Consultas.
-- Registro de ventas.
-- Sincronización de operaciones.
-- Actualizaciones de logística.
-- Configuración.
-- Reportes.
-- Confirmaciones.
+- Queries.
+- Sales registration.
+- Operation synchronization.
+- Logistics updates.
+- Configuration.
+- Reports.
+- Confirmations.
 
 ```mermaid
 flowchart LR
 
     CLIENT["Angular / Flutter"]
     API["API Gateway"]
-    SERVICE["Microservicio"]
+    SERVICE["Microservice"]
     DATABASE[("PostgreSQL")]
 
     CLIENT -->|"HTTP Request"| API
@@ -650,50 +650,50 @@ flowchart LR
     API -->|"HTTP Response"| CLIENT
 ```
 
-REST se utiliza para operaciones que siguen un modelo de solicitud y respuesta.
+REST is used for request-response operations.
 
 ---
 
 ## WebSockets
 
-WebSockets se utiliza solamente cuando el backend necesita enviar información al cliente sin esperar una nueva solicitud.
+WebSockets is used only when the backend must push information to clients without waiting for a new request.
 
-### Responsabilidades
+### Responsibilities
 
 - Heartbeats.
-- Estado de conectividad.
-- Alertas administrativas.
-- Cambios de estado relevantes.
-- Eventos operativos en tiempo real.
-- Resultados de procesos prolongados cuando corresponda.
+- Connectivity status.
+- Administrative alerts.
+- Relevant state changes.
+- Real-time operational events.
+- Results of long-running processes when applicable.
 
 ```mermaid
 flowchart LR
 
-    CLIENT["Cliente conectado"]
+    CLIENT["Connected Client"]
     WS["WebSocket Gateway"]
     MONITOR["Monitoring Service"]
     REDIS[("Redis")]
 
-    CLIENT <-->|"Canal bidireccional"| WS
+    CLIENT <-->|"Bidirectional Channel"| WS
     WS --> MONITOR
     MONITOR --> REDIS
 ```
 
-WebSockets complementa a REST, pero no lo reemplaza.
+WebSockets complements REST without replacing it.
 
 ---
 
-# Distribución de la Comunicación
+# Communication Distribution
 
 ```mermaid
 flowchart TD
 
-    OPERATION{"Tipo de comunicación"}
+    OPERATION{"Communication Type"}
 
-    REQUEST{"¿Necesita solicitud<br/>y respuesta?"}
-    IMMEDIATE{"¿El servidor debe notificar<br/>sin una nueva consulta?"}
-    INTERNAL{"¿Es comunicación interna<br/>entre servicios?"}
+    REQUEST{"Requires request<br/>and response?"}
+    IMMEDIATE{"Must server notify<br/>without new query?"}
+    INTERNAL{"Is it internal service-to-service<br/>communication?"}
 
     REST["REST"]
     WS["WebSockets"]
@@ -701,47 +701,47 @@ flowchart TD
 
     OPERATION --> REQUEST
 
-    REQUEST -->|"Sí"| REST
+    REQUEST -->|"Yes"| REST
     REQUEST -->|"No"| IMMEDIATE
 
-    IMMEDIATE -->|"Sí"| WS
+    IMMEDIATE -->|"Yes"| WS
     IMMEDIATE -->|"No"| INTERNAL
 
-    INTERNAL -->|"Sí"| MQ
+    INTERNAL -->|"Yes"| MQ
 ```
 
 ---
 
-# Comunicación Interna
+# Internal Communication
 
-La comunicación interna puede ser síncrona o asíncrona.
+Internal communication can be synchronous or asynchronous.
 
-## Comunicación síncrona
+## Synchronous Communication
 
-Se utiliza cuando un componente necesita una respuesta inmediata.
+Used when a component needs an immediate response.
 
 ```text
 API Gateway
     ↓
-Microservicio
+Microservice
     ↓
-Respuesta
+Response
 ```
 
-## Comunicación asíncrona
+## Asynchronous Communication
 
-Se utiliza para desacoplar procesos y permitir que diferentes servicios reaccionen a un evento.
+Used to decouple processes and allow different services to react to an event.
 
 ```mermaid
 flowchart LR
 
-    PRODUCER["Servicio productor"]
+    PRODUCER["Producer Service"]
     MQ[["RabbitMQ"]]
-    CONSUMER_A["Consumidor A"]
-    CONSUMER_B["Consumidor B"]
-    CONSUMER_C["Consumidor C"]
+    CONSUMER_A["Consumer A"]
+    CONSUMER_B["Consumer B"]
+    CONSUMER_C["Consumer C"]
 
-    PRODUCER -->|"Publicar evento"| MQ
+    PRODUCER -->|"Publish Event"| MQ
     MQ --> CONSUMER_A
     MQ --> CONSUMER_B
     MQ --> CONSUMER_C
@@ -749,98 +749,98 @@ flowchart LR
 
 ---
 
-# Persistencia
+# Persistence
 
-La plataforma utiliza diferentes mecanismos de persistencia según el tipo de información y el nivel de disponibilidad requerido.
+The platform employs different persistence mechanisms depending on data type and required availability.
 
 ---
 
-## Persistencia Local
+## Local Persistence
 
-SQLite se utiliza en el Punto de Venta.
+SQLite is used in the Point of Sale.
 
-### Responsabilidades
+### Responsibilities
 
-- Registro local de ventas.
-- Persistencia de operaciones pendientes.
-- Cola de sincronización.
-- Recuperación después de reiniciar la aplicación.
-- Conservación de errores de sincronización.
-- Continuidad operativa.
+- Local sales recording.
+- Pending operations persistence.
+- Synchronization queue.
+- Recovery after app restarts.
+- Sync error retention.
+- Operational continuity.
 
 ```mermaid
 flowchart TD
 
-    OPERATION["Operación"]
-    BUSINESS_TABLES[("Tablas locales")]
-    SYNC_QUEUE[("Cola de sincronización")]
+    OPERATION["Operation"]
+    BUSINESS_TABLES[("Local Tables")]
+    SYNC_QUEUE[("Sync Queue")]
 
     OPERATION --> BUSINESS_TABLES
     OPERATION --> SYNC_QUEUE
 ```
 
-Cada operación pendiente puede mantener:
+Each pending operation maintains:
 
-| Campo | Propósito |
+| Field | Purpose |
 |---|---|
-| `operationId` | UUID único de la operación |
-| `operationType` | Tipo de operación |
-| `payload` | Datos necesarios para procesarla |
-| `createdAt` | Fecha de creación local |
-| `status` | Estado de sincronización |
-| `retryCount` | Cantidad de intentos |
-| `lastAttemptAt` | Último intento realizado |
-| `lastError` | Último error registrado |
-| `syncedAt` | Fecha de confirmación definitiva |
+| `operationId` | Unique operation UUID |
+| `operationType` | Operation type |
+| `payload` | Data needed for processing |
+| `createdAt` | Local creation timestamp |
+| `status` | Sync status |
+| `retryCount` | Retry attempt count |
+| `lastAttemptAt` | Last attempt timestamp |
+| `lastError` | Last recorded error |
+| `syncedAt` | Definitive confirmation timestamp |
 
 ---
 
-## Persistencia Central
+## Central Persistence
 
-PostgreSQL representa la fuente de verdad central del sistema.
+PostgreSQL represents the central source of truth.
 
-### Responsabilidades
+### Responsibilities
 
-- Ventas.
-- Inventario.
-- Usuarios.
-- Clientes.
-- Configuración.
-- Operaciones logísticas.
-- Auditoría.
-- Reportes.
-- Resultado definitivo de las sincronizaciones.
+- Sales.
+- Inventory.
+- Users.
+- Clients.
+- Configuration.
+- Logistics operations.
+- Audit.
+- Reports.
+- Definitive synchronization results.
 
 ```mermaid
 flowchart LR
 
-    SERVICES["Microservicios"]
-    DB[("PostgreSQL<br/>Instancia compartida")]
+    SERVICES["Microservices"]
+    DB[("PostgreSQL<br/>Shared Instance")]
 
-    SERVICES -->|"Lectura y escritura"| DB
+    SERVICES -->|"Read & Write"| DB
 ```
 
-PostgreSQL almacena el estado definitivo.
+PostgreSQL stores definitive state.
 
-Redis, RabbitMQ y SQLite no sustituyen esta responsabilidad.
+Redis, RabbitMQ, and SQLite do not substitute this responsibility.
 
 ---
 
 # Redis
 
-Redis se utiliza para información temporal y coordinación distribuida.
+Redis is used for temporal data and distributed coordination.
 
-## Responsabilidades
+## Responsibilities
 
 - Heartbeats.
-- Estado de conectividad.
-- Sesiones.
-- Datos temporales.
-- Claves de idempotencia.
-- Bloqueos distribuidos.
-- Contadores.
+- Connectivity state.
+- Sessions.
+- Temporary data.
+- Idempotency keys.
+- Distributed locks.
+- Counters.
 - Rate limiting.
-- Caché de corta duración.
+- Short-lived caching.
 
 ```mermaid
 flowchart TD
@@ -850,36 +850,36 @@ flowchart TD
     SYNC["Synchronization Service"]
     REDIS[("Redis")]
 
-    MONITOR -->|"Heartbeats y TTL"| REDIS
-    AUTH -->|"Sesiones y estados temporales"| REDIS
-    SYNC -->|"Idempotencia y locks"| REDIS
+    MONITOR -->|"Heartbeats & TTL"| REDIS
+    AUTH -->|"Sessions & Temporary States"| REDIS
+    SYNC -->|"Idempotency & Locks"| REDIS
 ```
 
-Redis no almacena el estado definitivo del negocio.
+Redis does not store definitive business state.
 
-Su objetivo consiste en coordinar componentes distribuidos y ofrecer acceso rápido a información temporal.
+Its purpose is coordinating distributed components and providing fast access to temporal data.
 
 ---
 
 # RabbitMQ
 
-RabbitMQ permite desacoplar el procesamiento interno.
+RabbitMQ enables internal processing decoupling.
 
-## Responsabilidades
+## Responsibilities
 
-- Publicación de eventos.
-- Comunicación entre microservicios.
-- Procesamiento asíncrono.
-- Reintentos.
-- Distribución de trabajo.
-- Integraciones.
+- Event publishing.
+- Inter-microservice communication.
+- Asynchronous processing.
+- Retries.
+- Work distribution.
+- Integrations.
 - Dead Letter Queues.
-- Absorción de picos de carga.
+- Load spike absorption.
 
 ```mermaid
 flowchart LR
 
-    PRODUCER["Servicio productor"]
+    PRODUCER["Producer Service"]
     EXCHANGE["Exchange"]
 
     SALES_QUEUE["Sales Queue"]
@@ -892,7 +892,7 @@ flowchart LR
 
     DLQ["Dead Letter Queue"]
 
-    PRODUCER -->|"Publicar evento"| EXCHANGE
+    PRODUCER -->|"Publish Event"| EXCHANGE
 
     EXCHANGE --> SALES_QUEUE
     EXCHANGE --> INVENTORY_QUEUE
@@ -902,40 +902,36 @@ flowchart LR
     INVENTORY_QUEUE --> INVENTORY
     NOTIFICATION_QUEUE --> NOTIFY
 
-    SALES_QUEUE -.->|"Error permanente"| DLQ
-    INVENTORY_QUEUE -.->|"Error permanente"| DLQ
-    NOTIFICATION_QUEUE -.->|"Error permanente"| DLQ
+    SALES_QUEUE -.->|"Permanent Error"| DLQ
+    INVENTORY_QUEUE -.->|"Permanent Error"| DLQ
+    NOTIFICATION_QUEUE -.->|"Permanent Error"| DLQ
 ```
 
-RabbitMQ complementa la arquitectura Offline-First.
-
-No reemplaza la cola local almacenada en SQLite.
+RabbitMQ complements the Offline-First architecture without replacing SQLite local queues.
 
 ---
 
-# Relación entre SQLite, Redis y RabbitMQ
+# Relationship Between SQLite, Redis, and RabbitMQ
 
-Los tres componentes pueden participar en el procesamiento de operaciones, pero cumplen responsabilidades diferentes.
-
-| Componente | Responsabilidad |
+| Component | Responsibility |
 |---|---|
-| **SQLite** | Mantener operaciones mientras el cliente está desconectado |
-| **Redis** | Mantener estado temporal, idempotencia y coordinación |
-| **RabbitMQ** | Transportar eventos y distribuir procesamiento dentro del backend |
+| **SQLite** | Retain operations while client is offline |
+| **Redis** | Maintain temporal state, idempotency, and coordination |
+| **RabbitMQ** | Transport events and distribute backend processing |
 
 ```mermaid
 flowchart LR
 
     POS["Flutter POS"]
-    SQLITE[("SQLite<br/>Cola local")]
+    SQLITE[("SQLite<br/>Local Queue")]
     API["API Gateway"]
-    REDIS[("Redis<br/>Idempotencia")]
-    MQ[["RabbitMQ<br/>Mensajería"]]
-    SERVICE["Microservicio"]
+    REDIS[("Redis<br/>Idempotency")]
+    MQ[["RabbitMQ<br/>Messaging"]]
+    SERVICE["Microservice"]
     PG[("PostgreSQL")]
 
     POS --> SQLITE
-    SQLITE -->|"Sincronización REST"| API
+    SQLITE -->|"REST Sync"| API
     API --> REDIS
     API --> MQ
     MQ --> SERVICE
@@ -944,43 +940,43 @@ flowchart LR
 
 ---
 
-# Heartbeats y Estado de Conectividad
+# Heartbeats and Connectivity State
 
-Los clientes que necesitan ser monitoreados mantienen una conexión WebSocket con el servicio de monitoreo.
+Clients requiring monitoring maintain a WebSocket connection with the Monitoring Service.
 
-Cada cliente envía periódicamente un heartbeat.
+Each client periodically transmits a heartbeat.
 
 ```mermaid
 sequenceDiagram
 
-    participant Client as Cliente
+    participant Client as Client
     participant WS as WebSocket Gateway
     participant Monitor as Monitoring Service
     participant Redis
     participant Admin as Angular Admin
 
-    loop Intervalo de heartbeat
+    loop Heartbeat Interval
         Client->>WS: Heartbeat
-        WS->>Monitor: Registrar actividad
-        Monitor->>Redis: Actualizar heartbeat con TTL
-        Redis-->>Monitor: Confirmación
+        WS->>Monitor: Register activity
+        Monitor->>Redis: Update heartbeat with TTL
+        Redis-->>Monitor: Confirmation
     end
 
-    Note over Redis: La clave expira si dejan de llegar heartbeats
+    Note over Redis: Key expires if heartbeats stop arriving
 
-    Monitor->>Redis: Consultar clientes vencidos
-    Redis-->>Monitor: Heartbeat expirado
-    Monitor->>WS: Marcar cliente como OFFLINE
-    WS-->>Admin: Notificar cambio de estado
+    Monitor->>Redis: Query expired clients
+    Redis-->>Monitor: Expired heartbeat
+    Monitor->>WS: Mark client as OFFLINE
+    WS-->>Admin: Notify status change
 ```
 
-## Clave temporal
+## Temporal Key Structure
 
 ```text
 client:heartbeat:{clientId}
 ```
 
-La clave puede almacenar:
+Sample payload:
 
 ```json
 {
@@ -992,18 +988,14 @@ La clave puede almacenar:
 }
 ```
 
-El TTL determina cuánto tiempo puede transcurrir sin recibir un latido antes de considerar al cliente desconectado.
-
-RabbitMQ no necesita procesar cada heartbeat.
-
-Puede intervenir solamente cuando se produce un cambio significativo de estado.
+The TTL determines allowable silent duration before considering the client offline.
 
 ```mermaid
 flowchart LR
 
-    HEARTBEAT["Heartbeat recibido"]
+    HEARTBEAT["Heartbeat Received"]
     REDIS[("Redis TTL")]
-    EXPIRED{"¿Expiró?"}
+    EXPIRED{"Expired?"}
     EVENT["ClientDisconnected"]
     MQ[["RabbitMQ"]]
     NOTIFY["Notification Service"]
@@ -1013,7 +1005,7 @@ flowchart LR
     REDIS --> EXPIRED
 
     EXPIRED -->|"No"| REDIS
-    EXPIRED -->|"Sí"| EVENT
+    EXPIRED -->|"Yes"| EVENT
 
     EVENT --> MQ
     MQ --> NOTIFY
@@ -1022,11 +1014,11 @@ flowchart LR
 
 ---
 
-# Flujo de Sincronización Offline
+# Offline Synchronization Flow
 
-El Punto de Venta registra primero la operación de manera local.
+The Point of Sale records operations locally first.
 
-Cuando recupera la conectividad, el motor de sincronización envía las operaciones pendientes al backend mediante REST.
+Upon connectivity recovery, the synchronization engine sends pending operations to the backend via REST.
 
 ```mermaid
 sequenceDiagram
@@ -1042,53 +1034,53 @@ sequenceDiagram
     participant Notification as Notification Service
     participant Admin as Angular Admin
 
-    POS->>SQLite: Registrar venta local
-    SQLite-->>POS: Confirmar operación
+    POS->>SQLite: Register local sale
+    SQLite-->>POS: Confirm operation
 
-    Note over POS,SQLite: La venta se completa sin depender del servidor
+    Note over POS,SQLite: Sale completes independently of server
 
     POS->>API: POST /synchronization/operations
-    API->>Sync: Enviar lote validado
-    Sync->>Redis: Consultar operationId
+    API->>Sync: Send validated batch
+    Sync->>Redis: Query operationId
 
-    alt Operación ya procesada
-        Redis-->>Sync: UUID existente
-        Sync-->>API: Resultado previamente registrado
-        API-->>POS: Confirmación idempotente
-        POS->>SQLite: Marcar como sincronizada
-    else Operación pendiente
-        Redis-->>Sync: UUID no encontrado
-        Sync->>MQ: Publicar ProcessSale
-        MQ->>Sales: Entregar mensaje
-        Sales->>DB: Persistir venta
-        DB-->>Sales: Confirmación
-        Sales->>Redis: Registrar operationId
-        Sales->>MQ: Publicar SaleProcessed
-        MQ->>Sync: Entregar resultado
-        Sync-->>API: Operación procesada
-        API-->>POS: Confirmación REST
-        POS->>SQLite: Marcar como sincronizada
-        MQ->>Notification: Entregar evento
-        Notification-->>Admin: Notificar mediante WebSocket
+    alt Already Processed Operation
+        Redis-->>Sync: Existing UUID
+        Sync-->>API: Previously registered result
+        API-->>POS: Idempotent confirmation
+        POS->>SQLite: Mark as synced
+    else Pending Operation
+        Redis-->>Sync: UUID not found
+        Sync->>MQ: Publish ProcessSale
+        MQ->>Sales: Deliver message
+        Sales->>DB: Persist sale
+        DB-->>Sales: Confirmation
+        Sales->>Redis: Register operationId
+        Sales->>MQ: Publish SaleProcessed
+        MQ->>Sync: Deliver result
+        Sync-->>API: Processed operation
+        API-->>POS: REST confirmation
+        POS->>SQLite: Mark as synced
+        MQ->>Notification: Deliver event
+        Notification-->>Admin: Notify via WebSocket
     end
 ```
 
 ---
 
-# Sincronización por Lotes
+# Batch Synchronization
 
-Para reducir el número de solicitudes, el POS puede enviar varias operaciones pendientes en una misma petición REST.
+To minimize requests, the POS sends multiple pending operations in a single REST request.
 
 ```mermaid
 flowchart LR
 
-    QUEUE[("Cola local SQLite")]
-    BATCH["Construir lote"]
+    QUEUE[("SQLite Local Queue")]
+    BATCH["Build Batch"]
     API["POST /synchronization/batch"]
-    VALIDATE["Validar operaciones"]
-    PROCESS["Procesar individualmente"]
-    RESULT["Resultado por operación"]
-    UPDATE["Actualizar SQLite"]
+    VALIDATE["Validate Operations"]
+    PROCESS["Process Individually"]
+    RESULT["Per-Operation Result"]
+    UPDATE["Update SQLite"]
 
     QUEUE --> BATCH
     BATCH --> API
@@ -1098,7 +1090,7 @@ flowchart LR
     RESULT --> UPDATE
 ```
 
-La respuesta debe identificar el resultado de cada operación:
+Batch responses identify outcomes for each item:
 
 ```json
 {
@@ -1122,75 +1114,69 @@ La respuesta debe identificar el resultado de cada operación:
 }
 ```
 
-El éxito de una operación no implica necesariamente el éxito de todo el lote.
-
 ---
 
-# Estados de una Operación Local
-
-Una operación no debería representarse únicamente como pendiente o sincronizada.
-
-Puede atravesar diferentes estados.
+# Local Operation States
 
 ```mermaid
 stateDiagram-v2
 
-    [*] --> Pending: Operación creada
+    [*] --> Pending: Operation Created
 
-    Pending --> Sending: Iniciar sincronización
+    Pending --> Sending: Start Synchronization
 
-    Sending --> Synced: Confirmación definitiva
+    Sending --> Synced: Definitive Confirmation
 
-    Sending --> RetryPending: Timeout o error temporal
+    Sending --> RetryPending: Timeout or Temporal Error
 
-    RetryPending --> Sending: Nuevo intento
+    RetryPending --> Sending: Retry Attempt
 
-    Sending --> Conflict: Conflicto de negocio
+    Sending --> Conflict: Business Conflict
 
-    Sending --> Failed: Error permanente
+    Sending --> Failed: Permanent Error
 
-    Conflict --> Pending: Conflicto resuelto
+    Conflict --> Pending: Conflict Resolved
 
-    Failed --> Pending: Corrección manual
+    Failed --> Pending: Manual Correction
 
     Synced --> [*]
 ```
 
-Estados posibles:
+State descriptions:
 
-| Estado | Significado |
+| State | Meaning |
 |---|---|
-| `PENDING` | Esperando sincronización |
-| `SENDING` | En proceso de envío |
-| `RETRY_PENDING` | Esperando un nuevo intento |
-| `SYNCED` | Confirmada por el backend |
-| `CONFLICT` | Requiere reconciliación |
-| `FAILED` | No puede procesarse automáticamente |
+| `PENDING` | Awaiting synchronization |
+| `SENDING` | In flight to backend |
+| `RETRY_PENDING` | Scheduled for re-attempt |
+| `SYNCED` | Backend confirmed |
+| `CONFLICT` | Reconciliation required |
+| `FAILED` | Cannot be processed automatically |
 
 ---
 
-# Idempotencia
+# Idempotency
 
-La idempotencia evita que una operación repetida produzca múltiples efectos.
+Idempotency guarantees repeated operations produce single effects.
 
-Cada operación generada por el cliente contiene un UUID estable.
+Every operation generated by a client contains a stable UUID.
 
 ```mermaid
 flowchart TD
 
-    REQUEST["Operación recibida"]
-    ID["Extraer operationId"]
-    REDIS{"¿Existe en Redis?"}
-    PREVIOUS["Devolver resultado anterior"]
-    PROCESS["Procesar operación"]
+    REQUEST["Operation Received"]
+    ID["Extract operationId"]
+    REDIS{"Exists in Redis?"}
+    PREVIOUS["Return Previous Result"]
+    PROCESS["Process Operation"]
     DB[("PostgreSQL")]
-    SAVE["Registrar operationId"]
-    RESPONSE["Responder al cliente"]
+    SAVE["Register operationId"]
+    RESPONSE["Respond to Client"]
 
     REQUEST --> ID
     ID --> REDIS
 
-    REDIS -->|"Sí"| PREVIOUS
+    REDIS -->|"Yes"| PREVIOUS
     PREVIOUS --> RESPONSE
 
     REDIS -->|"No"| PROCESS
@@ -1199,72 +1185,49 @@ flowchart TD
     SAVE --> RESPONSE
 ```
 
-La clave de idempotencia puede seguir una estructura similar a:
+Idempotency key pattern:
 
 ```text
 idempotency:{clientId}:{operationId}
 ```
 
-Redis permite realizar una verificación rápida, pero la base de datos central debe mantener una protección adicional.
-
-Ejemplo:
+PostgreSQL enforces uniqueness constraints as fallback:
 
 ```sql
 UNIQUE (client_id, operation_id)
 ```
 
-Esto evita que dos instancias de un servicio procesen la misma operación simultáneamente y produzcan efectos duplicados.
-
 ---
 
-# Reintentos y Dead Letter Queue
-
-Los errores temporales y permanentes requieren tratamientos diferentes.
+# Retries and Dead Letter Queue
 
 ```mermaid
 flowchart TD
 
-    MESSAGE["Mensaje recibido"]
-    PROCESS{"¿Procesamiento correcto?"}
+    MESSAGE["Message Received"]
+    PROCESS{"Successful Processing?"}
 
-    SUCCESS["Confirmar mensaje"]
-    RETRY{"¿Error recuperable?"}
-    DELAY["Cola de reintento"]
+    SUCCESS["Acknowledge Message"]
+    RETRY{"Recoverable Error?"}
+    DELAY["Retry Queue"]
     DLQ["Dead Letter Queue"]
-    REVIEW["Revisión manual"]
+    REVIEW["Manual Review"]
 
     MESSAGE --> PROCESS
 
-    PROCESS -->|"Sí"| SUCCESS
+    PROCESS -->|"Yes"| SUCCESS
     PROCESS -->|"No"| RETRY
 
-    RETRY -->|"Sí"| DELAY
+    RETRY -->|"Yes"| DELAY
     DELAY --> MESSAGE
 
     RETRY -->|"No"| DLQ
     DLQ --> REVIEW
 ```
 
-Ejemplos de errores recuperables:
-
-- Timeout.
-- Servicio temporalmente no disponible.
-- Bloqueo transitorio de base de datos.
-- Pérdida momentánea de conectividad interna.
-- Reinicio temporal de un consumidor.
-
-Ejemplos de errores no recuperables:
-
-- Datos inválidos.
-- Recurso inexistente.
-- Violación de una regla de negocio.
-- Operación incompatible con el estado actual.
-- Mensaje con formato incorrecto.
-- Versión de contrato no soportada.
-
 ---
 
-# Flujo Administrativo Online-First
+# Online-First Administrative Flow
 
 ```mermaid
 sequenceDiagram
@@ -1278,346 +1241,151 @@ sequenceDiagram
     participant WS as WebSocket Gateway
 
     Admin->>API: GET /inventory
-    API->>Inventory: Consultar inventario
-    Inventory->>DB: Leer datos
-    DB-->>Inventory: Resultado
-    Inventory-->>API: Inventario actual
-    API-->>Admin: Respuesta REST
+    API->>Inventory: Query Inventory
+    Inventory->>DB: Read Data
+    DB-->>Inventory: Result
+    Inventory-->>API: Current Inventory
+    API-->>Admin: REST Response
 
-    Inventory->>MQ: Publicar InventoryChanged
-    MQ->>Notification: Entregar evento
-    Notification->>WS: Enviar actualización
-    WS-->>Admin: Notificación en tiempo real
+    Inventory->>MQ: Publish InventoryChanged
+    MQ->>Notification: Deliver Event
+    Notification->>WS: Send Update
+    WS-->>Admin: Real-Time Notification
 ```
-
-La consulta inicial utiliza REST.
-
-WebSockets se utiliza solamente para informar cambios posteriores relevantes.
 
 ---
 
-# Flujo de Logística Online-First Permisivo
+# Permissive Online-First Logistics Flow
 
 ```mermaid
 sequenceDiagram
 
-    participant User as Usuario
-    participant App as Flutter Logística
-    participant Cache as Caché local
+    participant User as User
+    participant App as Flutter Logistics
+    participant Cache as Local Cache
     participant API as API Gateway
     participant Service as Logistics Service
     participant DB as PostgreSQL
 
-    User->>App: Registrar operación
-    App->>API: Solicitud REST
+    User->>App: Register Operation
+    App->>API: REST Request
 
-    alt Backend disponible
-        API->>Service: Procesar operación
-        Service->>DB: Persistir
-        DB-->>Service: Confirmación
-        Service-->>API: Resultado
-        API-->>App: Operación confirmada
-    else Interrupción temporal
-        API--xApp: Error de conectividad
-        App->>Cache: Guardar operación temporal
-        App->>App: Programar reintento
-        App->>API: Reintentar operación
-        API->>Service: Procesar
-        Service->>DB: Persistir
-        DB-->>Service: Confirmación
-        Service-->>API: Resultado
-        API-->>App: Confirmación
-        App->>Cache: Eliminar operación temporal
+    alt Backend Available
+        API->>Service: Process Operation
+        Service->>DB: Persist
+        DB-->>Service: Confirmation
+        Service-->>API: Result
+        API-->>App: Confirmed Operation
+    else Temporary Outage
+        API--xApp: Connectivity Error
+        App->>Cache: Save Operation Temporarily
+        App->>App: Schedule Retry
+        App->>API: Retry Operation
+        API->>Service: Process
+        Service->>DB: Persist
+        DB-->>Service: Confirmation
+        Service-->>API: Result
+        API-->>App: Confirmation
+        App->>Cache: Remove Temporary Operation
     end
 ```
 
 ---
 
-# Disponibilidad Parcial del Sistema
-
-La arquitectura debe tolerar fallos parciales.
+# Partial System Availability
 
 ```mermaid
 flowchart TD
 
-    CLIENT["Cliente"]
-    API{"¿API disponible?"}
-    SERVICE{"¿Servicio disponible?"}
-    MQ{"¿RabbitMQ disponible?"}
-    DATABASE{"¿PostgreSQL disponible?"}
+    CLIENT["Client"]
+    API{"API Available?"}
+    SERVICE{"Service Available?"}
+    MQ{"RabbitMQ Available?"}
+    DATABASE{"PostgreSQL Available?"}
 
-    LOCAL["Guardar localmente"]
-    RETRY["Programar reintento"]
-    ACCEPT["Aceptar para procesamiento"]
-    SUCCESS["Operación procesada"]
+    LOCAL["Save Locally"]
+    RETRY["Schedule Retry"]
+    ACCEPT["Accept for Processing"]
+    SUCCESS["Operation Processed"]
 
     CLIENT --> API
 
     API -->|"No"| LOCAL
-    API -->|"Sí"| SERVICE
+    API -->|"Yes"| SERVICE
 
     SERVICE -->|"No"| RETRY
-    SERVICE -->|"Sí"| MQ
+    SERVICE -->|"Yes"| MQ
 
     MQ -->|"No"| RETRY
-    MQ -->|"Sí"| DATABASE
+    MQ -->|"Yes"| DATABASE
 
     DATABASE -->|"No"| RETRY
-    DATABASE -->|"Sí"| SUCCESS
+    DATABASE -->|"Yes"| SUCCESS
 
     LOCAL --> RETRY
 ```
 
-No todos los fallos producen la misma respuesta.
-
-- En el POS, la operación puede continuar localmente.
-- En Administración, se informa la indisponibilidad.
-- En Logística, se guarda temporalmente y se reintenta.
-- En RabbitMQ, los mensajes pueden permanecer pendientes.
-- En los microservicios, los errores recuperables pueden utilizar reintentos.
-
 ---
 
-# Separación de Responsabilidades
+# Component Responsibility Matrix
 
-| Necesidad | Componente |
+| Need | Component |
 |---|---|
-| Interfaz administrativa | Angular |
-| Aplicaciones POS y logística | Flutter |
-| Persistencia local offline | SQLite |
-| Persistencia central | PostgreSQL |
-| Estado temporal | Redis |
-| Claves de idempotencia | Redis y restricciones en PostgreSQL |
-| Eventos internos | RabbitMQ |
-| Reintentos de backend | RabbitMQ |
+| Administrative UI | Angular |
+| POS & Logistics apps | Flutter |
+| Offline local persistence | SQLite |
+| Central persistence | PostgreSQL |
+| Temporal state | Redis |
+| Idempotency keys | Redis & PostgreSQL constraints |
+| Internal events | RabbitMQ |
+| Backend retries | RabbitMQ |
 | Dead Letter Queue | RabbitMQ |
-| Comunicación cliente-servidor | REST |
+| Client-server communication | REST |
 | Heartbeats | WebSockets |
-| Notificaciones en tiempo real | WebSockets |
-| Entrada central al backend | API Gateway |
-| Coordinación de servicios | NestJS |
-| Procesamiento de ventas | Sales Service |
-| Reconciliación offline | Synchronization Service |
-| Procesamiento logístico | Logistics Service |
-| Estado de clientes | Monitoring Service |
-| Distribución de notificaciones | Notification Service |
+| Real-time notifications | WebSockets |
+| Central backend entry | API Gateway |
+| Service coordination | NestJS |
+| Sales processing | Sales Service |
+| Offline reconciliation | Synchronization Service |
+| Logistics processing | Logistics Service |
+| Client presence state | Monitoring Service |
+| Notification distribution | Notification Service |
 
 ---
 
-# Límites de Responsabilidad
+# Architectural Principles
 
-La arquitectura evita utilizar una tecnología para resolver problemas que pertenecen a otra capa.
+## Connectivity Serves the Business
 
-## SQLite no reemplaza PostgreSQL
+The architecture does not apply a single connectivity strategy across the platform.
 
-SQLite conserva el estado necesario para que el POS opere localmente.
+Each client uses the minimum strategy needed to satisfy operational goals.
 
-PostgreSQL conserva el estado central y definitivo.
+## Local Persistence Has Specific Purpose
 
-## Redis no reemplaza PostgreSQL
+Used when operational continuity justifies added complexity.
 
-Redis mantiene información rápida y temporal.
+## Central Source of Truth Prevails
 
-No funciona como fuente de verdad del negocio.
+PostgreSQL maintains definitive corporate state.
 
-## RabbitMQ no reemplaza SQLite
+## Selective Real-Time Communication
 
-RabbitMQ requiere que la operación haya alcanzado la infraestructura backend.
+WebSockets is reserved for immediate value events.
 
-SQLite conserva las operaciones cuando el cliente todavía no puede comunicarse con el servidor.
+## Operations Must Be Recoverable
 
-## WebSockets no reemplaza REST
+Pending operations survive unexpected app closures, restarts, and temporal errors.
 
-WebSockets se reserva para comunicación bidireccional y eventos inmediatos.
-
-REST continúa siendo el canal principal para operaciones de negocio.
-
-## RabbitMQ no confirma por sí solo el resultado del negocio
-
-Publicar un mensaje en RabbitMQ significa que fue aceptado para procesamiento.
-
-No significa necesariamente que la operación haya sido persistida correctamente.
-
-La confirmación definitiva debe representar el resultado real del procesamiento.
-
-## Redis no reemplaza las restricciones de PostgreSQL
-
-Redis ayuda a detectar rápidamente operaciones duplicadas.
-
-Sin embargo, las restricciones de unicidad en PostgreSQL representan la protección definitiva frente a condiciones de carrera o pérdida temporal del caché.
-
-## Los microservicios no deben compartir responsabilidades
-
-Aunque utilicen una instancia compartida de PostgreSQL, cada microservicio debe mantener sus reglas, contratos y responsabilidades delimitadas.
+> **Architecture defines responsibilities. Technologies provide mechanisms to implement them.**
 
 ---
 
-# Principios Arquitectónicos
+# Related Documents
 
-## La conectividad responde al negocio
-
-La arquitectura no aplica una única estrategia de conectividad a toda la plataforma.
-
-Cada cliente utiliza la estrategia mínima necesaria para cumplir sus objetivos operativos.
-
-## La persistencia local tiene un propósito específico
-
-La persistencia local se utiliza cuando la continuidad operativa justifica la complejidad adicional.
-
-## La fuente de verdad continúa siendo central
-
-Aunque algunos clientes operen temporalmente de manera autónoma, PostgreSQL mantiene el estado corporativo definitivo.
-
-## La comunicación en tiempo real es selectiva
-
-WebSockets se utiliza únicamente cuando la inmediatez aporta valor.
-
-## La mensajería desacopla, pero no elimina la consistencia
-
-RabbitMQ permite procesamiento asíncrono, pero las reglas de negocio continúan requiriendo validación, idempotencia y resolución de conflictos.
-
-## Las operaciones deben ser recuperables
-
-Las operaciones pendientes deben sobrevivir cierres inesperados, reinicios y errores temporales.
-
-## Compartir infraestructura no implica compartir dominios
-
-Los microservicios pueden utilizar la misma instancia de PostgreSQL dentro del alcance del caso, pero deben mantener separadas sus responsabilidades funcionales.
-
-## La tecnología es una consecuencia
-
-> **La arquitectura define las responsabilidades. Las tecnologías proporcionan los mecanismos para implementarlas.**
-
----
-
-# Riesgos Arquitectónicos
-
-La arquitectura introduce desafíos que deben documentarse y probarse.
-
-- Operaciones duplicadas.
-- Eventos fuera de orden.
-- Sincronizaciones parciales.
-- Ventas concurrentes sobre el mismo inventario.
-- Conflictos entre estado local y central.
-- Clientes desconectados durante períodos prolongados.
-- Expiración de credenciales offline.
-- Mensajes enviados a Dead Letter Queues.
-- Pérdida de confirmaciones.
-- Reintentos excesivos.
-- Diferencias entre relojes de clientes y servidor.
-- Caídas parciales de microservicios.
-- Inconsistencias temporales entre servicios.
-- Dependencia compartida de una única instancia de PostgreSQL.
-- Acceso incorrecto de un servicio a tablas pertenecientes a otro dominio.
-
-Estos escenarios se analizan con mayor profundidad en:
-
-- **SYNCHRONIZATION.md**
-- **CONFLICT_SCENARIOS.md**
-- **DESIGNDECISIONS.md**
-
----
-
-# Trade-offs
-
-La solución seleccionada ofrece beneficios concretos, pero también introduce costos.
-
-## Beneficios
-
-- Continuidad operativa del Punto de Venta.
-- Mejor experiencia en entornos con conectividad inestable.
-- Actualizaciones en tiempo real donde son necesarias.
-- Menor uso de conexiones WebSocket.
-- Desacoplamiento interno mediante RabbitMQ.
-- Recuperación de operaciones pendientes.
-- Adaptación de la estrategia según el cliente.
-- Menor complejidad de infraestructura al utilizar una instancia compartida de PostgreSQL.
-
-## Costos
-
-- Mayor complejidad de sincronización.
-- Necesidad de idempotencia.
-- Manejo de estado distribuido.
-- Resolución de conflictos.
-- Reintentos y recuperación ante fallos.
-- Observabilidad de colas y operaciones.
-- Dependencia de Redis y RabbitMQ para determinadas capacidades.
-- Riesgo de acoplamiento entre servicios por compartir PostgreSQL.
-- Necesidad de controlar estrictamente la propiedad lógica de los datos.
-
----
-
-# Responsabilidad de Cada Componente
-
-| Necesidad | Componente |
-|---|---|
-| Persistencia local | SQLite |
-| Persistencia central | PostgreSQL |
-| Estado temporal | Redis |
-| Idempotencia rápida | Redis |
-| Garantía final contra duplicados | PostgreSQL |
-| Eventos internos | RabbitMQ |
-| Comunicación cliente-servidor | REST |
-| Eventos en tiempo real | WebSockets |
-| Heartbeats | WebSockets y Redis |
-| Coordinación de servicios | NestJS |
-| Continuidad operativa | Flutter y SQLite |
-| Procesamiento asíncrono | RabbitMQ |
-| Monitoreo de conectividad | Monitoring Service |
-| Reconciliación offline | Synchronization Service |
-
----
-
-# Documentos Relacionados
-
-| Documento | Contenido |
-|---|---|
-| **README.md** | Problema, restricciones, alternativas y decisión arquitectónica |
-| **ARCHITECTURE.md** | Componentes, comunicaciones y flujos técnicos |
-| **DESIGNDECISIONS.md** | Decisiones, alternativas y trade-offs |
-| **SYNCHRONIZATION.md** | Protocolo de sincronización, estados e idempotencia |
-| **CONFLICT_SCENARIOS.md** | Conflictos distribuidos y estrategias de resolución |
-| **SECURITY.md** | Seguridad y autenticación en clientes online y offline |
-| **RUNNING.md** | Configuración y ejecución local |
-
----
-
-# Conclusión
-
-La arquitectura combina diferentes estrategias de conectividad dentro de una misma plataforma.
-
-La aplicación administrativa utiliza un modelo Online-First para trabajar con información actualizada.
-
-El Punto de Venta utiliza un modelo Offline-First para garantizar continuidad operativa.
-
-La aplicación logística utiliza un modelo Online-First Permisivo para tolerar interrupciones temporales sin asumir toda la complejidad de un cliente completamente autónomo.
-
-REST funciona como mecanismo principal para las operaciones del negocio.
-
-WebSockets se reserva para heartbeats y eventos que necesitan comunicación inmediata.
-
-RabbitMQ desacopla el procesamiento entre microservicios.
-
-Redis coordina estados temporales e idempotencia.
-
-SQLite permite que el POS continúe operando localmente.
-
-PostgreSQL conserva el estado central y definitivo utilizando una única instancia compartida para el alcance de este caso de estudio.
-
-Esta simplificación permite mantener el análisis enfocado en la conectividad, la continuidad operativa y la sincronización, sin introducir la complejidad adicional de una base de datos independiente por microservicio.
-
-> **Cada cliente utiliza la estrategia de conectividad mínima necesaria para cumplir sus objetivos operativos.**
-
-La tecnología es una consecuencia de esta decisión, no su punto de partida.
-
----
-
-# Documentos Relacionados
-
-- **SECURITY.md** — Arquitectura de autenticación y seguridad.
-- **SYNCHRONIZATION.md** — Sincronización de eventos entre clientes y servidor.
-- **CONFLICT_RESOLUTION.md** — Resolución de conflictos de negocio.
-- **TEST.md** — Estrategia de pruebas unitarias y automatización.
-- **DESIGNDECISIONS.md** — Decisiones de diseño y elecciones tecnológicas.
-- **DEPLOYMENT.md** — Estrategia de despliegue y operación.
-- **RUNNING.md** — Ejecución del proyecto.
+- **SECURITY.md** — Authentication architecture and security.
+- **SYNCHRONIZATION.md** — Event synchronization between clients and server.
+- **CONFLICT_RESOLUTION.md** — Business conflict resolution.
+- **TEST.md** — Unit testing strategy and automation.
+- **DESIGNDECISIONS.md** — Design decisions and technology choices.
+- **RUNNING.md** — Local project execution.

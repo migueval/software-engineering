@@ -1,24 +1,24 @@
-# 🚀 Guía de Ejecución Local
+# 🚀 Local Execution Guide
 
-## Caso de Estudio 2: Estrategias de Conectividad en Sistemas Distribuidos
+## Case Study 2: Connectivity Strategies in Distributed Systems
 
 ---
 
-# Requisitos Previos
+# Prerequisites
 
-Antes de ejecutar las aplicaciones, asegúrate de tener instalado en tu equipo de desarrollo:
-- **Node.js** (v18 o v20 recomendado) y npm.
-- **Docker Desktop** para levantar la infraestructura compartida.
-- **Flutter SDK** (v3.10 o superior) configurado para escritorio Windows y móvil Android.
+Before running the applications, make sure you have the following installed on your development machine:
+- **Node.js** (v18 or v20 recommended) and npm.
+- **Docker Desktop** to spin up shared infrastructure.
+- **Flutter SDK** (v3.10 or higher) configured for Windows desktop and Android mobile.
 - **Angular CLI** (`npm install -g @angular/cli`).
 
 ---
 
-# 1. Levantar Infraestructura con Docker
+# 1. Spin Up Infrastructure with Docker
 
-El sistema requiere tres contenedores compartidos en red local: PostgreSQL (base de datos relacional central), Redis (sesiones, TTL y Heartbeats) y RabbitMQ (desacoplamiento de alertas y notificaciones).
+The system requires three containers shared over local network: PostgreSQL (central relational database), Redis (sessions, TTL, and Heartbeats), and RabbitMQ (alerts and notifications decoupling).
 
-Crea un archivo `docker-compose.yml` en la raíz del backend con la siguiente configuración:
+Create a `docker-compose.yml` file at the root of the backend with the following configuration:
 
 ```yaml
 version: '3.8'
@@ -47,30 +47,30 @@ services:
     container_name: case_study_rabbitmq
     ports:
       - "5672:5672"
-      - "15672:15672" # Panel de administración de RabbitMQ
+      - "15672:15672" # RabbitMQ Management Console
 
 volumes:
   pgdata:
 ```
 
-Ejecuta el siguiente comando en tu terminal para iniciar los servicios en segundo plano:
+Run the following command in your terminal to start background services:
 ```bash
 docker-compose up -d
 ```
 
 ---
 
-# 2. Configurar y Ejecutar el Backend (Microservicios NestJS)
+# 2. Configure and Run Backend (NestJS Microservices)
 
-Navega a la carpeta del backend, instala dependencias e inicia los servicios:
+Navigate to the backend folder, install dependencies, and start services:
 
 ```bash
 cd backend
 npm install
 ```
 
-### Variables de Entorno (`.env`)
-Asegúrate de crear un archivo `.env` en cada microservicio con las credenciales de conexión correspondientes:
+### Environment Variables (`.env`)
+Make sure to create a `.env` file in each microservice with corresponding connection credentials:
 ```env
 PORT=3000
 DATABASE_HOST=localhost
@@ -84,13 +84,13 @@ RABBITMQ_URI=amqp://localhost:5672
 JWT_SECRET=super_secret_corporate_key
 ```
 
-### Ejecutar Servicios en Desarrollo
-Inicia cada servicio usando su respectivo script de npm:
+### Run Services in Development Mode
+Start each service using its respective npm script:
 ```bash
-# Ejecutar API Gateway (Puerto 3000 por defecto)
+# Run API Gateway (Default Port 3000)
 npm run start:dev api-gateway
 
-# Ejecutar el resto de servicios correspondientes
+# Run remaining corresponding services
 npm run start:dev auth-service
 npm run start:dev sync-service
 npm run start:dev monitoring-service
@@ -99,30 +99,30 @@ npm run start:dev notification-service
 
 ---
 
-# 3. Ejecutar Aplicaciones Frontend (Clientes)
+# 3. Run Frontend Applications (Clients)
 
-## A. Panel de Administración (Angular)
-El panel administrativo requiere conectividad con el API Gateway y el servidor de WebSockets.
+## A. Administration Panel (Angular)
+The administrative panel requires connectivity with the API Gateway and WebSockets server.
 
 ```bash
 cd client-admin
 npm install
 ng serve --open
 ```
-El panel se abrirá automáticamente en `http://localhost:4200/`.
+The panel will open automatically at `http://localhost:4200/`.
 
-## B. Punto de Venta Desktop (Flutter Windows)
-Para compilar y ejecutar el Punto de Venta en modo nativo de Windows:
+## B. Point of Sale Desktop (Flutter Windows)
+To compile and run the Point of Sale in native Windows mode:
 
 ```bash
 cd client-pos
 flutter pub get
 flutter run -d windows
 ```
-*Nota: Al ejecutarse por primera vez, el cliente generará el archivo de base de datos SQLite local de manera automática.*
+*Note: On initial launch, the client will automatically generate the local SQLite database file.*
 
-## C. App de Logística (Flutter Android)
-Para compilar y desplegar la app en un emulador o dispositivo Android conectado:
+## C. Logistics App (Flutter Android)
+To compile and deploy the app on a connected Android emulator or physical device:
 
 ```bash
 cd client-logistics
@@ -132,26 +132,26 @@ flutter run -d android
 
 ---
 
-# 4. Simulación de Escenarios del Caso de Estudio
+# 4. Simulation of Case Study Scenarios
 
-Una vez que todo el entorno esté en funcionamiento, puedes simular los siguientes comportamientos:
+Once the full environment is operational, you can simulate the following behaviors:
 
-### Simular Caja Fuera de Red (Offline Mode)
-1. Desconecta el cable de red o apaga el Wi-Fi de la computadora donde corre el **POS Desktop**.
-2. Registra ventas en el POS. Observa que el sistema permite realizar cobros instantáneamente sin latencia y los almacena localmente en SQLite.
-3. Observa que en el **Panel de Angular Admin**, el estado del POS cambia automáticamente a **"OFFLINE"** tras 15 segundos sin recibir latidos.
-4. Vuelve a conectar la red. Observa cómo el motor de sincronización del POS detecta señal y sube las ventas diferidas de forma asíncrona mediante lotes.
-5. El stock se actualiza en PostgreSQL centralizado y la alerta de desconexión en Angular desaparece automáticamente.
+### Simulate POS Offline Mode
+1. Disconnect the network cable or turn off Wi-Fi on the machine running **POS Desktop**.
+2. Register sales on the POS. Observe that the system allows completing checkout transactions instantly without latency, storing them locally in SQLite.
+3. Observe that in the **Angular Admin Panel**, POS status automatically changes to **"OFFLINE"** after 15 seconds without receiving heartbeats.
+4. Reconnect the network. Observe how the POS sync engine detects connectivity and uploads deferred sales asynchronously in batches.
+5. Inventory updates in central PostgreSQL, and the disconnection alert in Angular automatically disappears.
 
 ---
 
-# Documentos Relacionados
+# Related Documents
 
-- **ARCHITECTURE.md** — Arquitectura general del sistema.
-- **SECURITY.md** — Autenticación, autorización y seguridad offline.
-- **SYNCHRONIZATION.md** — Sincronización de eventos entre clientes y servidor.
-- **CONFLICT_RESOLUTION.md** — Resolución de conflictos de negocio.
-- **TEST.md** — Estrategia de pruebas unitarias y automatización.
-- **DESIGNDECISIONS.md** — Decisiones de diseño y elecciones tecnológicas.
-- **DEPLOYMENT.md** — Estrategia de despliegue y operación.
-- **RUNNING.md** — Ejecución del proyecto.
+- **ARCHITECTURE.md** — Overall system architecture.
+- **SECURITY.md** — Authentication, authorization, and offline security.
+- **SYNCHRONIZATION.md** — Event synchronization between clients and server.
+- **CONFLICT_RESOLUTION.md** — Business conflict resolution.
+- **TEST.md** — Unit testing strategy and automation.
+- **DESIGNDECISIONS.md** — Design decisions and technology choices.
+- **DEPLOYMENT.md** — Deployment and operational strategy.
+- **RUNNING.md** — Project execution.
