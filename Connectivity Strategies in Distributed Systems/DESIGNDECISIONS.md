@@ -942,3 +942,154 @@ Con estas decisiones, la arquitectura cubre tres aspectos fundamentales:
 
 La siguiente sección aborda las decisiones relacionadas con las reglas de negocio y los compromisos arquitectónicos asumidos para equilibrar disponibilidad y consistencia.
 
+# Decisiones de Negocio y Trade-offs Arquitectónicos
+
+Hasta este punto se han descrito las decisiones relacionadas con la conectividad, la persistencia local, la sincronización y el monitoreo.
+
+Sin embargo, una arquitectura distribuida no se define únicamente por las tecnologías utilizadas.
+
+Gran parte de su diseño está condicionado por las reglas del negocio y los compromisos que la organización está dispuesta a asumir.
+
+---
+
+## ¿Debe el Punto de Venta permitir vender sin conexión?
+
+Esta fue una de las decisiones más importantes del proyecto.
+
+Desde una perspectiva técnica, impedir las ventas cuando el servidor no está disponible simplifica considerablemente la arquitectura.
+
+No existen datos pendientes de sincronización, conflictos ni inconsistencias temporales.
+
+Sin embargo, desde la perspectiva del negocio, esta decisión resulta inaceptable.
+
+Un Punto de Venta que deja de operar por una falla de Internet representa pérdidas económicas y afecta directamente la continuidad del servicio.
+
+Por este motivo, la arquitectura prioriza la disponibilidad del proceso de venta.
+
+---
+
+## ¿Qué implica esta decisión?
+
+Permitir operaciones sin conexión significa aceptar que algunos datos permanecerán desactualizados hasta que la sincronización finalice.
+
+Por ejemplo:
+
+- El inventario consolidado puede no reflejar inmediatamente una venta realizada en otra sucursal.
+- Dos clientes podrían operar simultáneamente sobre la misma información.
+- Algunas validaciones deberán realizarse posteriormente durante la sincronización.
+
+En otras palabras, la disponibilidad tiene un costo.
+
+La arquitectura acepta este compromiso porque el impacto de detener las ventas resulta significativamente mayor.
+
+---
+
+## ¿Quién es la autoridad de los datos?
+
+Aunque los clientes pueden operar de forma autónoma durante períodos de desconexión, la autoridad final sobre la información continúa siendo el servidor.
+
+Los clientes almacenan una copia temporal de los datos necesarios para operar.
+
+Una vez restablecida la conectividad, el servidor valida, procesa y consolida la información recibida.
+
+Este modelo evita que múltiples clientes intenten convertirse en la fuente principal de verdad del sistema.
+
+---
+
+## ¿Qué información puede almacenarse localmente?
+
+No toda la información necesita persistirse en el cliente.
+
+Durante el diseño se decidió almacenar únicamente los datos necesarios para garantizar la continuidad de la operación.
+
+Entre ellos:
+
+- Productos.
+- Clientes.
+- Precios vigentes.
+- Inventario local.
+- Configuración necesaria para operar.
+- Eventos pendientes de sincronización.
+
+Información como usuarios globales, configuraciones administrativas o reportes consolidados permanece centralizada en el servidor.
+
+Esta separación reduce la complejidad del cliente y minimiza los riesgos de inconsistencias.
+
+---
+
+## ¿Qué decisiones permanecen en el servidor?
+
+Determinadas operaciones requieren una visión global del sistema y, por tanto, no pueden delegarse completamente al cliente.
+
+Por ejemplo:
+
+- Consolidación del inventario entre sucursales.
+- Administración de usuarios y roles.
+- Configuración del sistema.
+- Generación de reportes globales.
+- Auditoría de operaciones.
+
+Mantener estas responsabilidades en el servidor permite preservar una fuente única de verdad para la organización.
+
+---
+
+## Disponibilidad vs Consistencia
+
+Una de las decisiones arquitectónicas más relevantes consiste en reconocer que ambas propiedades no siempre pueden maximizarse al mismo tiempo.
+
+En este caso de estudio se prioriza la disponibilidad en aquellos procesos donde detener la operación genera un mayor impacto para el negocio.
+
+En cambio, los procesos administrativos priorizan la consistencia al trabajar directamente sobre la información centralizada.
+
+La arquitectura adapta este equilibrio según la responsabilidad de cada aplicación, en lugar de aplicar una única estrategia para toda la plataforma.
+
+---
+
+## Principio de Diseño
+
+Una idea guio todas las decisiones descritas en este documento:
+
+> **Cada componente debe asumir únicamente la complejidad necesaria para cumplir su responsabilidad.**
+
+Este principio se refleja en toda la arquitectura.
+
+- El Punto de Venta incorpora persistencia local y sincronización porque necesita operar sin conexión.
+- El panel administrativo permanece Online-First porque requiere información centralizada.
+- La aplicación logística adopta una estrategia intermedia, adecuada a su contexto operativo.
+
+En lugar de construir clientes idénticos, la arquitectura especializa cada aplicación según las necesidades reales del negocio.
+
+---
+# Resumen de Decisiones Arquitectónicas
+
+| Decisión | Alternativas Evaluadas | Decisión Adoptada | Justificación |
+|----------|------------------------|-------------------|---------------|
+| Estrategia de Conectividad | Online-First para todos, Offline-First para todos, Estrategia híbrida | Estrategia específica por cliente | Cada aplicación presenta requisitos operativos distintos, por lo que una única estrategia habría introducido complejidad innecesaria o limitado la disponibilidad. |
+| Punto de Venta | Online-First / Offline-First | Offline-First | La continuidad de las ventas tiene prioridad sobre la consistencia inmediata. |
+| Panel Administrativo | Offline-First / Online-First | Online-First | Requiere información consolidada y actualizada para la toma de decisiones. |
+| Aplicación Logística | Online-First / Offline-First | Online-First Permisivo | Tolera interrupciones temporales sin incorporar toda la complejidad de un cliente Offline-First. |
+| Persistencia Local | Hive, Isar, SQLite | SQLite | Proporciona transacciones ACID, integridad referencial y un modelo relacional adecuado para operaciones comerciales. |
+| Sincronización | Inmediata, Manual, Automática | Automática en segundo plano | Reduce la intervención del usuario y permite continuar operando mientras los datos se sincronizan cuando existe conectividad. |
+| Registro de Operaciones | Consultar tablas de negocio, Event Log | Event Log | Desacopla la lógica de negocio del proceso de sincronización y facilita reintentos y auditoría. |
+| Estado de Conectividad | Confiar en la conexión, Heartbeats | Heartbeats + Redis TTL | Permite detectar desconexiones inesperadas y mantener un estado de presencia actualizado. |
+| Fuente de Verdad | Cliente, Servidor | Servidor | Garantiza una visión consolidada de la información una vez finalizada la sincronización. |
+| Prioridad Arquitectónica | Consistencia, Disponibilidad | Según el contexto del negocio | El POS prioriza disponibilidad, mientras que la Administración prioriza consistencia. |
+| Distribución de Responsabilidades | Clientes homogéneos, Clientes especializados | Clientes especializados | Cada aplicación implementa únicamente la complejidad necesaria para cumplir su responsabilidad. |
+
+# Conclusión
+
+Las decisiones presentadas en este documento muestran que diseñar una arquitectura distribuida implica mucho más que seleccionar tecnologías.
+
+Cada elección representa un equilibrio entre simplicidad, disponibilidad, consistencia y complejidad operativa.
+
+En este caso de estudio no se buscó encontrar una solución universal, sino construir una arquitectura capaz de responder a distintos escenarios de conectividad sin comprometer la continuidad del negocio.
+
+Los detalles de implementación de estas decisiones se desarrollan en los documentos complementarios del proyecto:
+
+- **ARCHITECTURE.md**
+- **SYNCHRONIZATION.md**
+- **CONFLICT_SCENARIOS.md**
+- **DEPLOYMENT.md**
+- **RUNNING.md**
+
+En conjunto, estos documentos describen tanto el razonamiento arquitectónico como la implementación técnica de una plataforma distribuida basada en estrategias de conectividad diferenciadas.
