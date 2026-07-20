@@ -1,143 +1,143 @@
 # 🛠️ Software Engineering Portfolio
 
-> **Learning software engineering through real-world engineering case studies.**
+> **A collection of software engineering case studies focused on architecture, distributed systems, backend engineering, and real-world engineering decisions.**
 
-A curated collection of **software engineering case studies** focused on solving real-world engineering problems through architectural analysis, system design, and practical implementations.
+This repository documents how software systems are designed, evaluated, implemented, and evolved through practical engineering case studies.
 
-Rather than showcasing frameworks or CRUD applications, each case study starts with an engineering challenge, evaluates architectural alternatives, documents design decisions, and explains the trade-offs behind the chosen solution.
+Rather than showcasing CRUD applications or framework tutorials, every project begins with a real business problem, explores architectural alternatives, documents engineering trade-offs, and delivers a production-inspired implementation.
 
-The goal is not only to demonstrate implementation skills, but also to show **how engineering decisions are made**, **why they matter**, and **how software evolves as requirements become more complex**.
-
-Whether you're a recruiter, software engineer, or student, this repository aims to provide practical insights into software architecture and modern software engineering.
+The goal is to demonstrate **engineering thinking**, **architectural reasoning**, and **software design**.
 
 ---
 
-# 📊 Repository Status
+# 🧭 Engineering Focus
 
-| Case Study | Status |
-|------------|--------|
-| 🔐 Authentication Architecture Case Study | ✅ Completed |
-| 📱 Offline-First POS Lab | 🟡 In Progress |
-| 🛰️ Distributed Synchronization Engine | 🔵 Planned |
-| 🚧 Additional Engineering Case Studies | 🔵 Planned |
+```mermaid
+mindmap
+  root((Software Engineering))
 
----
+    Authentication
+      Identity
+      Security
+      Authorization
 
-# 🎯 Repository Goals
+    Connectivity Resilience
+      Offline-First
+      Synchronization
+      Eventual Consistency
 
-This repository aims to:
+    Operational Continuity
+      Business Availability
+      Monitoring
+      Recovery
 
-- Demonstrate software engineering principles through practical implementations.
-- Explore real-world engineering challenges instead of generic applications.
-- Compare different architectural approaches to the same problem.
-- Document design decisions and engineering trade-offs.
-- Showcase clean architecture, maintainable code, and scalable software design.
-- Serve as a learning resource for developers interested in backend, mobile, cloud and distributed systems.
+    Backup & Recovery
+      Reliability
+      Restore
+      Disaster Recovery
 
----
+    Architecture
+      Distributed Systems
+      Event-Driven
+      System Design
 
-# 💡 Why This Repository Exists
-
-Many software portfolios focus on demonstrating programming languages, frameworks, or completed applications.
-
-This repository takes a different approach.
-
-Every project begins with an engineering problem and attempts to answer questions such as:
-
-- Why was this architecture selected?
-- Which alternatives were considered?
-- What trade-offs were accepted?
-- How does the solution evolve as requirements change?
-- What impact does the architecture have on scalability, maintainability, reliability, and security?
-
-The objective is to demonstrate **engineering thinking**, not simply implementation skills.
+    Engineering
+      Backend
+      Mobile
+      Cloud
+      Documentation
+```
 
 ---
 
-# 🏛️ Current Engineering Case Studies
+# 📚 Engineering Case Studies
 
-| Case Study | Business Scenario | Engineering Question | Status |
-|------------|-------------------|----------------------|--------|
-| 🔐 Authentication Architecture | Building a secure authentication platform capable of evolving from a monolith into distributed services. | **How does an authentication system evolve from a monolith to microservices while maintaining security and scalability?** | ✅ Completed |
-| 📱 Offline-First POS | Keeping a point-of-sale operational during internet outages without losing sales or data integrity. | **How can a POS continue selling while offline and synchronize reliably once connectivity is restored?** | 🟡 In Progress |
-| 🛰️ Distributed Synchronization Engine | Synchronizing distributed clients connected through unstable or intermittent networks. | **How can distributed systems synchronize data reliably under unreliable network conditions?** | 🔵 Planned |
-| 🚧 Future Engineering Case Studies | Additional real-world software engineering challenges covering backend, cloud, mobile and distributed systems. | **How do different architectural approaches solve complex engineering problems?** | 🔵 Planned |
-
----
-
-# 🧭 Engineering Philosophy
-
-Every case study follows the same engineering methodology:
-
-1. Start from a real business problem.
-2. Understand functional and non-functional requirements.
-3. Explore multiple architectural approaches.
-4. Compare alternatives and trade-offs.
-5. Justify engineering decisions.
-6. Implement a practical solution.
-7. Analyze limitations.
-8. Suggest future improvements.
-
-The objective is not simply to explain **how** something works, but **why** it was designed that way.
+| Case Study | Engineering Focus | Status |
+|------------|-------------------|--------|
+| 🔐 Authentication Architecture | Authentication, Security, Monolith vs Microservices | ✅ Completed |
+| 📱 Offline-First POS | Connectivity Resilience, Synchronization, Offline-First | 🟡 In Progress |
+| 🛰️ Distributed Synchronization Engine | Distributed Systems, Eventual Consistency | 🔵 Planned |
+| 🚧 Future Case Studies | Backend, Cloud, Mobile & Software Architecture | 🔵 Planned |
 
 ---
 
-# 📚 Core Engineering Topics
+# 🏗️ Engineering Methodology
 
-## 🏛️ Software Architecture
+Every case study follows the same engineering workflow.
 
-- Monolithic Architecture
-- Microservices
-- API Gateway
-- Event-Driven Architecture
-- Distributed Systems
-- Domain Separation
-- Scalability
-- Fault Isolation
-- Architectural Trade-offs
+```text
+Business Problem
+        ↓
+Requirements Analysis
+        ↓
+Architectural Alternatives
+        ↓
+Engineering Decisions
+        ↓
+Implementation
+        ↓
+Validation
+        ↓
+Lessons Learned
+```
 
----
-
-## ⚙️ Backend Engineering
-
-- NestJS
-- Dependency Injection
-- REST APIs
-- PostgreSQL
-- Redis
-- RabbitMQ
-- Queue Processing
-- Distributed Communication
-- API Design
+Each project documents not only **how** the solution works, but also **why** it was designed that way.
 
 ---
 
-## 🛡️ Security Engineering
+# 🧩 Case Study Progression
 
-- JWT Authentication
-- Refresh Token Lifecycle
-- Two-Factor Authentication (2FA)
-- One-Time Password (OTP)
-- RBAC
-- Secure Session Management
+The case studies are intentionally connected.
+
+Rather than presenting isolated projects, each study introduces a new business challenge and builds upon decisions made in previous stages of the platform's evolution.
+
+```text
+Case Study 1
+Authentication Architecture
+(Identity, Security, Authorization)
+        ↓
+Case Study 2
+Connectivity Strategies
+(Offline-First, Synchronization, Resilience)
+        ↓
+Case Study 3
+Backup & Recovery
+(Disaster Recovery, Restore Procedures, Business Continuity)
+        ↓
+Case Study 4
+Operational Continuity
+(Monitoring, Availability, Operational Processes)
+        ↓
+Case Study 5
+Integrated Livestock Management Platform
+(Real Business System Combining All Previous Capabilities)
+```
+
+Each case study introduces new constraints, new architectural decisions, and new engineering trade-offs while preserving and extending previously established foundations.
+
+The objective is to simulate how real-world software systems evolve as business requirements become increasingly complex.
 
 ---
 
-## 📱 Mobile Engineering
+# 📖 Documentation
 
-- Offline-First Architecture
-- Local Persistence
-- Synchronization Queues
-- Connectivity Recovery
-- Background Synchronization
-- Conflict Resolution
-- Eventual Consistency
+Each case study includes engineering documentation describing the reasoning behind the implementation.
+
+Typical documents include:
+
+- `README.md`
+- `ARCHITECTURE.md`
+- `DESIGNDECISIONS.md`
+- `SECURITY.md`
+- `SYNCHRONIZATION.md`
+- `CONFLICT_RESOLUTION.md`
+- `TEST.md`
+- `DEPLOYMENT.md`
+- `RUNNING.md`
 
 ---
 
-# 🛠️ Engineering Technologies
-
-The technologies vary depending on the engineering challenge.
+# ⚙️ Technologies
 
 ### Backend
 
@@ -149,7 +149,7 @@ The technologies vary depending on the engineering challenge.
 - Angular
 - Flutter
 
-### Databases & Messaging
+### Data & Messaging
 
 - PostgreSQL
 - MySQL
@@ -160,107 +160,53 @@ The technologies vary depending on the engineering challenge.
 ### Infrastructure
 
 - Docker
-- Microsoft Azure
+- Azure
 - AWS
 
 ---
 
-# 📖 What You'll Find in Every Case Study
+# 🎯 Core Topics
 
-Each engineering case study is designed to answer a specific technical question and usually includes:
-
-- 📌 Business context
-- 🎯 Engineering problem
-- 🏛️ Architecture overview
-- ⚖️ Design decisions
-- 🔄 Alternative approaches
-- 📈 Trade-off analysis
-- 🛡️ Security considerations
-- ✅ Testing strategy
-- ⚠️ Risks & mitigations
-- 🚀 Running guide
-- 🔮 Future improvements
-
-Some studies also include architecture diagrams, sequence diagrams, performance discussions, and additional technical documentation.
-
----
-
-# 🎓 Who Is This Repository For?
-
-### 👩‍🎓 Junior Developers
-
-Learn architectural concepts beyond CRUD applications and understand why software patterns exist.
-
-### 👨‍💻 Mid-Level Engineers
-
-Study engineering trade-offs, distributed systems, and practical architectural decisions.
-
-### 🏗️ Senior Engineers
-
-Review implementation strategies, discuss design decisions, and evaluate architectural alternatives.
-
-### 💼 Recruiters & Hiring Managers
-
-Quickly evaluate engineering thinking, documentation quality, architectural maturity, and software design practices.
-
----
-
-# 🚀 Running the Projects
-
-Each case study is self-contained.
-
-Navigate to the desired project folder and follow its documentation.
-
-Typical documentation includes:
-
-- `README.md`
-- `DESIGNDECISIONS.md`
-- `ARCHITECTURE.md`
-- `RUNNING.md`
-
----
-
-# 🔮 Roadmap
-
-This repository will continue growing with new engineering case studies exploring topics such as:
-
+- Software Architecture
+- Backend Engineering
+- Distributed Systems
+- Event-Driven Architecture
+- Security Engineering
 - Offline-First Systems
-- Distributed Synchronization
-- Event-Driven Architectures
-- Cloud-Native Applications
-- Messaging Systems
-- Backend Scalability
-- Mobile Engineering Patterns
-- Distributed Caching
+- Connectivity Resilience
+- Backup & Recovery
+- Cloud Architecture
 - System Design
 
-Every new project will continue following the same philosophy:
+---
 
-> **Start with a real engineering problem. Finish with a documented engineering solution.**
+# 🚀 Roadmap
+
+The portfolio will continue expanding with engineering case studies covering topics such as:
+
+- Connectivity Resilience
+- Backup & Recovery
+- Distributed Synchronization
+- Event-Driven Architecture
+- Cloud-Native Applications
+- Observability
+- Backend Scalability
+- Performance Engineering
 
 ---
 
-# 👨‍💻 Author
+# 👨‍💻 About
 
 **Miguel Antonio Valdez Solis**
 
-Software Engineer | Full Stack & Backend Developer
+Software Engineer focused on backend engineering, software architecture, distributed systems, and scalable application design.
 
-Interested in:
+### Contact
 
-- Software Architecture
-- Distributed Systems
-- Backend Engineering
-- Mobile Development
-- Security Engineering
-- Cloud Technologies
-
-## 📫 Contact
-
-- Email: migueval123solis@gmail.com
 - GitHub: https://github.com/migueval
 - LinkedIn: https://www.linkedin.com/in/miguel-valdez-5b9995156
+- Email: migueval123solis@gmail.com
 
 ---
 
-> **"Software engineering is not about choosing the most complex architecture. It's about understanding the problem, evaluating trade-offs, and selecting the solution that best fits the context."**
+> **"Software engineering is not about choosing the most complex architecture. It is about understanding the problem, evaluating trade-offs, and building the solution that best fits the context."**
