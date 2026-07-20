@@ -24,6 +24,23 @@ It starts from an engineering question.
 
 ---
 
+# 🧭 Architectural Map
+
+```mermaid
+mindmap
+  root(("Connectivity<br/>Strategies"))
+    Architecture
+    Persistence
+    Synchronization
+    Conflicts
+    Monitoring
+    Infrastructure
+    Clients
+    Documentation
+```
+
+---
+
 # Scope
 
 This case study does not claim to demonstrate that a universal strategy exists for building distributed systems.
