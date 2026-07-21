@@ -30,6 +30,7 @@ It starts from an engineering question.
 mindmap
   root(("Connectivity<br/>Strategies"))
     Architecture
+    Database
     Persistence
     Synchronization
     Conflicts
@@ -795,12 +796,12 @@ The presented implementation constitutes one possible answer to this engineering
 
 However, the real objective of this case study is not merely to show the final result, but to document the analytical process that made it possible to arrive at it.
 
-If you wish to delve deeper into architecture, decisions made, and distributed synchronization challenges, you can continue with the following documents:
-
-- 📘 **ARCHITECTURE.md**
-- 📘 **DESIGNDECISIONS.md**
-- 📘 **SYNCHRONIZATION.md**
-- 📘 **CONFLICT_RESOLUTION.md**
-- 📘 **SECURITY.md**
-- 📘 **TEST.md**
-- 📘 **RUNNING.md**
+- 📘 [ARCHITECTURE.md](ARCHITECTURE.md)
+- 📘 [DESIGNDECISIONS.md](DESIGNDECISIONS.md)
+- 📘 [DATABASE.md](DATABASE.md)
+- 📘 [SYNCHRONIZATION.md](SYNCHRONIZATION.md)
+- 📘 [CONFLICT_RESOLUTION.md](CONFLICT_RESOLUTION.md)
+- 📘 [SECURITY.md](SECURITY.md)
+- 📘 [TEST.md](TEST.md)
+- 📘 [IMPLEMENTACION.md](IMPLEMENTACION.md)
+- 📘 [RUNNING.md](RUNNING.md)
