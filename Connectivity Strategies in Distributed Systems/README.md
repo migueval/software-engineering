@@ -42,6 +42,57 @@ mindmap
 
 ---
 
+# Business Scenario & Connectivity Rules
+
+To ground the technical analysis in a realistic environment, this case study models a **Cattle & Beef Products Point-of-Sale (POS)** platform operating under intermittent network connectivity.
+
+Rather than focusing on a specific technology, the business scenario defines the operational constraints that drive the architectural decisions explored throughout the case study.
+
+### Business Domain
+
+The platform supports two product categories:
+
+- **Weighted Products (`WEIGHT`)** – Beef cuts and bulk feed sold by weight in kilograms (e.g., `0.850 kg` of beef tenderloin at `$15.50/kg`).
+- **Unit Products (`UNIT`)** – Packaged meat products, feed bags, supplements, and farm supplies sold by quantity (e.g., `5 bags` of mineral feed).
+
+> **Scope Boundary**
+>
+> Live animal registration, herd traceability, and veterinary regulations are intentionally excluded to keep the discussion focused on connectivity architecture.
+
+---
+
+### Connectivity Rules
+
+#### Offline-First POS Terminal
+
+The POS terminal must continue operating even when connectivity is unavailable.
+
+Business transactions are completed locally and synchronized automatically once connectivity returns.
+
+---
+
+#### Online-First Administration Portal
+
+Administrative functions require an active connection to guarantee access to the most recent business state.
+
+Real-time supervision, inventory monitoring, and configuration management are intentionally centralized.
+
+---
+
+#### Reliable Synchronization
+
+The platform assumes unreliable networks.
+
+Synchronization therefore guarantees that:
+
+- Operations are never lost.
+- Duplicate transmissions never create duplicate business transactions.
+- Clients eventually converge to the same business state after reconnection.
+
+The implementation details of synchronization, persistence, and idempotency are documented separately in the architecture documentation.
+
+---
+
 # Scope
 
 This case study does not claim to demonstrate that a universal strategy exists for building distributed systems.
