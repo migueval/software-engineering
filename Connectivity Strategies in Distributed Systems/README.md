@@ -797,8 +797,8 @@ The presented implementation constitutes one possible answer to this engineering
 However, the real objective of this case study is not merely to show the final result, but to document the analytical process that made it possible to arrive at it.
 
 - 📘 [ARCHITECTURE.md](ARCHITECTURE.md)
+- 📘 [DATA_ARCHITECTURE.md](DATA_ARCHITECTURE.md)
 - 📘 [DESIGNDECISIONS.md](DESIGNDECISIONS.md)
-- 📘 [DATABASE.md](DATABASE.md)
 - 📘 [SYNCHRONIZATION.md](SYNCHRONIZATION.md)
 - 📘 [CONFLICT_RESOLUTION.md](CONFLICT_RESOLUTION.md)
 - 📘 [SECURITY.md](SECURITY.md)
